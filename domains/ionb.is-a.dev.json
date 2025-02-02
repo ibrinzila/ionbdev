@@ -1,0 +1,11 @@
+{
+    "description": "ionb.is-a.dev",
+    "repo": "https://github.com/ibrinzila/ionbdev",
+    "owner": {
+        "username": "ibrinzila",
+        "email": "ionbrinzila@gmail.com"
+    },
+    "record": {
+        "CNAME": "ionb"
+    }
+}
