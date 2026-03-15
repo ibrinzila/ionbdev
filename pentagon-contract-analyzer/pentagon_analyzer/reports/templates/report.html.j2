@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pentagon Contract Analysis Report</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #1a1a1a; line-height: 1.6; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 28px; margin-bottom: 8px; }
+  .subtitle { color: #666; margin-bottom: 24px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card-value { font-size: 32px; font-weight: 700; color: #1a1a1a; }
+  .card-label { font-size: 14px; color: #666; margin-top: 4px; }
+  .card-value.red { color: #dc2626; }
+  .card-value.amber { color: #d97706; }
+  .card-value.green { color: #16a34a; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th { background: #1e293b; color: white; padding: 12px 16px; text-align: left; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; }
+  th:hover { background: #334155; }
+  td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+  tr:hover td { background: #f8fafc; }
+  .tier-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+  .tier-100x { background: #7f1d1d; color: white; }
+  .tier-50x { background: #dc2626; color: white; }
+  .tier-25x { background: #ea580c; color: white; }
+  .tier-10x { background: #d97706; color: white; }
+  .confidence-bar { width: 60px; height: 8px; background: #e2e8f0; border-radius: 4px; display: inline-block; }
+  .confidence-fill { height: 100%; border-radius: 4px; background: #3b82f6; }
+  .section-title { font-size: 20px; margin: 32px 0 16px; }
+  .money { font-family: "SF Mono", "Fira Code", monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Pentagon Contract Analysis Report</h1>
+  <p class="subtitle">Generated {{ generated_at }} | {{ summary.total_contracts_analyzed }} contracts analyzed</p>
+
+  <div class="summary-grid">
+    <div class="card">
+      <div class="card-value red">${{ "{:,.0f}".format(summary.total_potential_savings) }}</div>
+      <div class="card-label">Total Potential Savings</div>
+    </div>
+    <div class="card">
+      <div class="card-value amber">{{ summary.contracts_flagged }}</div>
+      <div class="card-label">Contracts Flagged (10x+)</div>
+    </div>
+    <div class="card">
+      <div class="card-value red">{{ summary.contracts_above_50x }}</div>
+      <div class="card-label">Contracts Above 50x</div>
+    </div>
+    <div class="card">
+      <div class="card-value">{{ summary.single_supplier_count }}</div>
+      <div class="card-label">Single Supplier (Zero Competition)</div>
+    </div>
+    <div class="card">
+      <div class="card-value">{{ summary.total_clins_analyzed }}</div>
+      <div class="card-label">Line Items Analyzed</div>
+    </div>
+    <div class="card">
+      <div class="card-value green">{{ summary.clins_flagged }}</div>
+      <div class="card-label">Line Items Flagged</div>
+    </div>
+  </div>
+
+  <h2 class="section-title">Flagged Contracts — Sorted by Markup Ratio</h2>
+  <table id="results">
+    <thead>
+      <tr>
+        <th>Award ID</th>
+        <th>Recipient</th>
+        <th>Agency</th>
+        <th>Description</th>
+        <th>Gov Price</th>
+        <th>Commercial</th>
+        <th>Markup</th>
+        <th>Tier</th>
+        <th>Overspend</th>
+        <th>Confidence</th>
+        <th>Undercut Score</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for fc in flagged_contracts %}
+      {% for ma in fc.flagged_clins %}
+      <tr>
+        <td>{{ fc.award_id }}</td>
+        <td>{{ fc.recipient_name }}</td>
+        <td>{{ fc.awarding_agency }}</td>
+        <td title="{{ ma.clin.description }}">{{ ma.clin.description[:60] }}{% if ma.clin.description|length > 60 %}...{% endif %}</td>
+        <td class="money">${{ "{:,.2f}".format(ma.clin.unit_price) }}</td>
+        <td class="money">
+          {% if ma.commercial_match %}
+            ${{ "{:,.2f}".format(ma.commercial_match.commercial_unit_price) }}
+            <br><small>{{ ma.commercial_match.source }}</small>
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td class="money"><strong>{{ "{:.1f}".format(ma.markup_ratio) }}x</strong></td>
+        <td><span class="tier-badge tier-{{ ma.flag_tier }}">{{ ma.flag_tier }}</span></td>
+        <td class="money red">${{ "{:,.0f}".format(ma.total_overspend or 0) }}</td>
+        <td>
+          {% if ma.commercial_match %}
+            <div class="confidence-bar">
+              <div class="confidence-fill" style="width: {{ (ma.commercial_match.confidence * 100)|int }}%"></div>
+            </div>
+            {{ "{:.0%}".format(ma.commercial_match.confidence) }}
+          {% endif %}
+        </td>
+        <td>{{ "{:.3f}".format(fc.ease_of_undercut) }}</td>
+      </tr>
+      {% endfor %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+document.querySelectorAll('th').forEach((th, i) => {
+  th.addEventListener('click', () => {
+    const table = th.closest('table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.rows);
+    const dir = th.dataset.dir === 'asc' ? 'desc' : 'asc';
+    th.dataset.dir = dir;
+    rows.sort((a, b) => {
+      let av = a.cells[i].textContent.trim().replace(/[$,%x]/g, '');
+      let bv = b.cells[i].textContent.trim().replace(/[$,%x]/g, '');
+      const an = parseFloat(av), bn = parseFloat(bv);
+      if (!isNaN(an) && !isNaN(bn)) return dir === 'asc' ? an - bn : bn - an;
+      return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+    rows.forEach(r => tbody.appendChild(r));
+  });
+});
+</script>
+</body>
+</html>

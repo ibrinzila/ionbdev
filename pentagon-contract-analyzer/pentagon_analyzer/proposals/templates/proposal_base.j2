@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Contract Proposal — {{ company_name }}</title>
+<style>
+  body { font-family: "Times New Roman", serif; max-width: 8.5in; margin: 1in auto; line-height: 1.8; color: #1a1a1a; }
+  h1 { font-size: 24px; text-align: center; border-bottom: 2px solid #1a1a1a; padding-bottom: 12px; }
+  h2 { font-size: 18px; margin-top: 28px; border-bottom: 1px solid #ccc; padding-bottom: 6px; }
+  h3 { font-size: 15px; margin-top: 16px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th, td { border: 1px solid #999; padding: 8px 12px; text-align: left; font-size: 13px; }
+  th { background: #e2e8f0; }
+  p { margin: 8px 0; }
+  .cover-table td { border: none; padding: 4px 12px; }
+  .page-break { page-break-after: always; }
+  .highlight { background: #fef3c7; padding: 12px; border-left: 4px solid #d97706; margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<h1>TECHNICAL AND PRICE PROPOSAL</h1>
+<p style="text-align: center; font-size: 18px;">{{ company_name }}</p>
+<p style="text-align: center; color: #666;">Response to Solicitation {{ solicitation_number }}</p>
+
+<table class="cover-table">
+  <tr><td><strong>Solicitation Number:</strong></td><td>{{ solicitation_number }}</td></tr>
+  <tr><td><strong>Contract Number:</strong></td><td>{{ contract_number }}</td></tr>
+  <tr><td><strong>NAICS Code:</strong></td><td>{{ naics_code }}</td></tr>
+  <tr><td><strong>PSC Code:</strong></td><td>{{ psc_code }}</td></tr>
+  <tr><td><strong>Date Submitted:</strong></td><td>{{ submission_date }}</td></tr>
+  <tr><td><strong>UEI:</strong></td><td>{{ company_uei }}</td></tr>
+  <tr><td><strong>CAGE Code:</strong></td><td>{{ company_cage }}</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<h2>1. Executive Summary</h2>
+<p>{{ company_name }} proposes to provide the required items/services at a significant cost reduction compared to current contract pricing, while maintaining full compliance with all technical specifications and quality requirements.</p>
+
+<div class="highlight">
+  <strong>Cost Savings Summary:</strong> Our proposed pricing represents a {{ savings_percentage }}% reduction from the current contract value, delivering estimated savings of ${{ "{:,.0f}".format(total_savings) }} to the Department of Defense.
+</div>
+
+<h2>2. Technical Approach</h2>
+<h3>2.1 Understanding of Requirements</h3>
+<p><em>[Describe understanding of the contract requirements, deliverables, and performance standards]</em></p>
+
+<h3>2.2 Technical Solution</h3>
+<p><em>[Detail the proposed technical solution, including COTS products to be supplied]</em></p>
+
+<h3>2.3 Quality Assurance</h3>
+<p><em>[Describe quality management system, inspection procedures, and acceptance criteria]</em></p>
+
+<h2>3. Price Proposal</h2>
+<table>
+  <tr>
+    <th>CLIN</th>
+    <th>Description</th>
+    <th>Qty</th>
+    <th>Unit Price</th>
+    <th>Total</th>
+  </tr>
+  {% for item in line_items %}
+  <tr>
+    <td>{{ item.clin }}</td>
+    <td>{{ item.description }}</td>
+    <td>{{ item.quantity }}</td>
+    <td>${{ "{:,.2f}".format(item.unit_price) }}</td>
+    <td>${{ "{:,.2f}".format(item.total) }}</td>
+  </tr>
+  {% endfor %}
+  <tr>
+    <th colspan="4" style="text-align: right;">TOTAL PROPOSED PRICE:</th>
+    <th>${{ "{:,.2f}".format(total_proposed) }}</th>
+  </tr>
+</table>
+
+<h2>4. Past Performance</h2>
+<p><em>[List relevant past performance references, contract numbers, and outcomes]</em></p>
+
+<h2>5. Management Approach</h2>
+<h3>5.1 Organizational Structure</h3>
+<p><em>[Describe organization chart, key personnel, and management approach]</em></p>
+
+<h3>5.2 Supply Chain Management</h3>
+<p><em>[Detail supply chain, sourcing strategy, and delivery timeline]</em></p>
+
+<h2>6. CMMC Compliance</h2>
+<p>{{ company_name }} maintains CMMC Level {{ cmmc_level }} certification as required by DFARS 252.204-7021. Our cybersecurity program includes:</p>
+<ul>
+  <li>System Security Plan (SSP) — see attached</li>
+  <li>Plan of Action & Milestones (POA&M) — see attached</li>
+  <li>Incident Response Plan with 72-hour DoD notification</li>
+  {% if cmmc_level >= 2 %}
+  <li>Full implementation of 110 NIST SP 800-171 Rev 2 controls</li>
+  <li>Third-party assessment by accredited C3PAO</li>
+  {% endif %}
+</ul>
+
+<h2>7. Small Business Participation</h2>
+<p><em>[If applicable, describe small business subcontracting plan per FAR 19.7]</em></p>
+
+<h2>8. Representations and Certifications</h2>
+<p>All representations and certifications are current and accurate as recorded in SAM.gov under UEI {{ company_uei }}.</p>
+
+</body>
+</html>

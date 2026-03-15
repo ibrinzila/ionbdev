@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>System Security Plan (SSP) — {{ company_name }}</title>
+<style>
+  body { font-family: "Times New Roman", serif; max-width: 8.5in; margin: 1in auto; line-height: 1.8; color: #1a1a1a; }
+  h1 { font-size: 24px; text-align: center; border-bottom: 2px solid #1a1a1a; padding-bottom: 12px; margin-bottom: 24px; }
+  h2 { font-size: 18px; margin-top: 24px; border-bottom: 1px solid #ccc; padding-bottom: 6px; }
+  h3 { font-size: 15px; margin-top: 16px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th, td { border: 1px solid #999; padding: 8px 12px; text-align: left; font-size: 13px; }
+  th { background: #e2e8f0; }
+  .header-table td { border: none; padding: 4px 12px; }
+  .status-met { color: green; font-weight: bold; }
+  .status-partial { color: orange; font-weight: bold; }
+  .status-not-met { color: red; font-weight: bold; }
+  p { margin: 8px 0; }
+  .page-break { page-break-after: always; }
+</style>
+</head>
+<body>
+
+<h1>SYSTEM SECURITY PLAN (SSP)</h1>
+<h2 style="text-align: center; border: none;">CMMC Level {{ cmmc_level }} Compliance</h2>
+
+<table class="header-table">
+  <tr><td><strong>Organization:</strong></td><td>{{ company_name }}</td></tr>
+  <tr><td><strong>System Name:</strong></td><td>{{ system_name }}</td></tr>
+  <tr><td><strong>Date Prepared:</strong></td><td>{{ prepared_date }}</td></tr>
+  <tr><td><strong>Prepared By:</strong></td><td>{{ prepared_by }}</td></tr>
+  <tr><td><strong>CMMC Level:</strong></td><td>Level {{ cmmc_level }}</td></tr>
+  <tr><td><strong>Version:</strong></td><td>{{ version }}</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<h2>1. System Identification</h2>
+<p><strong>System Name:</strong> {{ system_name }}</p>
+<p><strong>System Description:</strong> {{ system_description }}</p>
+<p><strong>System Boundary:</strong> {{ system_boundary }}</p>
+<p><strong>Information Types:</strong> {{ information_types }}</p>
+
+<h2>2. System Environment</h2>
+<p><strong>Operating Environment:</strong> {{ operating_environment }}</p>
+<p><strong>Network Architecture:</strong> {{ network_architecture }}</p>
+<p><strong>Data Flow Description:</strong> {{ data_flow }}</p>
+
+<h2>3. Responsible Personnel</h2>
+<table>
+  <tr><th>Role</th><th>Name</th><th>Contact</th></tr>
+  {% for person in personnel %}
+  <tr>
+    <td>{{ person.role }}</td>
+    <td>{{ person.name }}</td>
+    <td>{{ person.contact }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>4. Security Control Implementation</h2>
+
+{% for domain in domains %}
+<h3>4.{{ loop.index }} {{ domain.name }} ({{ domain.id }})</h3>
+<p><em>{{ domain.description }}</em></p>
+<table>
+  <tr>
+    <th style="width:15%">Control ID</th>
+    <th style="width:35%">Requirement</th>
+    <th style="width:35%">Implementation</th>
+    <th style="width:15%">Status</th>
+  </tr>
+  {% for control in domain.controls %}
+  <tr>
+    <td>{{ control.id }}</td>
+    <td>{{ control.description }}</td>
+    <td><em>[Describe your implementation]</em></td>
+    <td class="status-partial">Planned</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endfor %}
+
+<div class="page-break"></div>
+
+<h2>5. Interconnections</h2>
+<table>
+  <tr><th>System</th><th>Organization</th><th>Type</th><th>Authorization</th></tr>
+  <tr><td><em>[External system name]</em></td><td><em>[Organization]</em></td><td><em>[Direct/VPN/API]</em></td><td><em>[MOU/ISA]</em></td></tr>
+</table>
+
+<h2>6. Applicable Laws, Regulations, and Standards</h2>
+<ul>
+  <li>DFARS 252.204-7012 — Safeguarding Covered Defense Information</li>
+  <li>DFARS 252.204-7021 — CMMC Requirements</li>
+  <li>NIST SP 800-171 Rev 2 — Protecting CUI in Nonfederal Systems</li>
+  <li>FAR 52.204-21 — Basic Safeguarding of Covered Contractor Information Systems</li>
+  {% if cmmc_level >= 2 %}
+  <li>NIST SP 800-172 — Enhanced Security Requirements for CUI</li>
+  {% endif %}
+</ul>
+
+<h2>7. Plan of Action & Milestones</h2>
+<p>See attached POA&M document for controls not yet fully implemented.</p>
+
+</body>
+</html>
