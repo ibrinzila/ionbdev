@@ -1,6 +1,6 @@
 # The Agency — is-a.dev AI Agent Org Structure
 
-> An open-source AI agency for the [is-a.dev](https://is-a.dev) project. 50+ specialized agents across 12 divisions, each with a unique voice, expertise, and defined deliverables.
+> An open-source AI agency for the [is-a.dev](https://is-a.dev) project. 63 specialized agents across 13 divisions — including a **control plane** for policy enforcement, risk classification, and rollback safety. Each agent has a unique voice, expertise, and defined deliverables.
 
 Inspired by [The Agency](https://github.com/msitarzewski/agency-agents) — the most starred AI repo of March 2026.
 
@@ -151,6 +151,19 @@ You don't need a bigger model. You need **better structure**.
 | 🔧 [DNSControl Expert](specialized/specialized-dnscontrol-expert.md) | DNSControl configuration, zone management | DNS-as-code, record generation |
 | 📋 [JSON Schema Validator](specialized/specialized-json-schema-validator.md) | JSON schema design, validation pipelines | Domain file validation, data quality |
 
+### Control Plane (5 agents)
+*Models suggest. The control plane decides. [Full documentation](control-plane/README.md)*
+
+| Agent | Role | Responsibility |
+|-------|------|----------------|
+| 🚦 [Policy Enforcer](control-plane/control-plane-policy-enforcer.md) | Gatekeeper | Authorizes or denies every action against [policy](control-plane/policy.yml) |
+| 📜 [Audit Logger](control-plane/control-plane-audit-logger.md) | Accountability | Records every action with full context |
+| ⏪ [Rollback Guardian](control-plane/control-plane-rollback-guardian.md) | Safety net | Ensures rollback paths exist, executes rollbacks |
+| ⚠️ [Risk Classifier](control-plane/control-plane-risk-classifier.md) | Risk engine | Classifies action risk based on context and blast radius |
+| 🔴 [Circuit Breaker](control-plane/control-plane-circuit-breaker.md) | Emergency stop | Halts operations when failure rates spike |
+
+> **Why a control plane?** Without it, you can't answer: *Who approved this action? What policy allowed it? What rollback path existed?* No answer = No production readiness. [Learn more](control-plane/README.md)
+
 ---
 
 ## Quick Start
@@ -217,12 +230,13 @@ agency/
 ├── strategy/            # 3 agents — Open Source, Partnerships, Data...
 ├── project-management/  # 3 agents — Coordination, Operations, Experiments...
 ├── specialized/         # 6 agents — Orchestrator, DNS Migration, API, CI/CD...
+├── control-plane/       # 5 agents + policy.yml — Policy, Audit, Rollback, Risk, Circuit Breaker
 ├── scripts/             # Installation and conversion scripts
 ├── examples/            # Usage examples and templates
 └── README.md            # This file
 ```
 
-**Total: 58 agents across 12 divisions**
+**Total: 63 agents across 13 divisions (including control plane)**
 
 ---
 

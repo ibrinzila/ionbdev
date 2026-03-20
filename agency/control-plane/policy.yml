@@ -1,0 +1,296 @@
+# Control Plane Policy — is-a.dev Agency
+# Models should suggest. The control plane should decide.
+#
+# This policy defines risk levels, approval requirements, constraints,
+# and rollback rules for all agent actions in the agency.
+
+policy_v1:
+
+  # ─── Risk Classification ───────────────────────────────────────────
+  # Every agent action is classified into a risk level before execution.
+  # Higher risk = more gates before execution.
+
+  risk_levels:
+    low:
+      description: "Read-only operations with no side effects"
+      actions:
+        - read_file
+        - search_code
+        - list_domains
+        - validate_json
+        - check_dns_records
+        - run_linter
+        - summarize_feedback
+        - generate_report
+        - analyze_metrics
+        - review_pr_readonly
+
+    medium:
+      description: "Modifications with reversible side effects"
+      actions:
+        - edit_file
+        - create_pr
+        - add_label
+        - update_documentation
+        - create_branch
+        - run_tests
+        - schedule_job
+        - update_dependency
+        - modify_workflow
+        - assign_reviewer
+
+    high:
+      description: "Actions with production impact or external visibility"
+      actions:
+        - merge_pr
+        - publish_dns
+        - deploy_production
+        - delete_domain
+        - modify_dnsconfig
+        - push_to_main
+        - send_notification
+        - external_api_write
+        - modify_cloudflare
+        - ban_user
+        - update_nameservers
+
+    critical:
+      description: "Irreversible actions with broad blast radius"
+      actions:
+        - delete_zone
+        - rotate_api_keys
+        - modify_registrar
+        - bulk_dns_update
+        - force_push
+        - drop_database
+        - revoke_access
+
+  # ─── Approval Requirements ─────────────────────────────────────────
+  # Who or what must approve an action before it executes.
+
+  approvals:
+    low:
+      required: false
+      auto_execute: true
+
+    medium:
+      required: conditional
+      auto_if: tests_green AND lint_pass AND confidence >= 0.80
+      fallback: human_review
+      timeout: 30m
+
+    high:
+      required: true
+      approver: human_required
+      min_approvals: 1
+      timeout: 24h
+      escalation: notify_maintainers
+
+    critical:
+      required: true
+      approver: admin_required
+      min_approvals: 2
+      timeout: 48h
+      escalation: notify_all_admins
+      dry_run_required: true
+
+  # ─── Constraints ───────────────────────────────────────────────────
+  # Global guardrails that apply to all agent actions.
+
+  constraints:
+    min_confidence: 0.70
+    max_retries: 2
+    dry_run_required_for:
+      - publish_dns
+      - deploy_production
+      - bulk_dns_update
+      - modify_cloudflare
+    rate_limits:
+      dns_publishes_per_hour: 4
+      prs_merged_per_hour: 20
+      domains_modified_per_minute: 50
+      external_api_calls_per_minute: 100
+    forbidden_actions:
+      - force_push_to_main
+      - delete_production_zone
+      - bypass_ci
+      - commit_secrets
+
+  # ─── Rollback Policy ──────────────────────────────────────────────
+  # Every write action must have a rollback path defined.
+
+  rollback:
+    required_for:
+      - edit_file
+      - merge_pr
+      - publish_dns
+      - deploy_production
+      - modify_dnsconfig
+      - update_dependency
+      - modify_cloudflare
+      - bulk_dns_update
+
+    strategies:
+      edit_file:
+        method: git_revert
+        auto_trigger: test_failure
+        max_rollback_time: 5m
+
+      merge_pr:
+        method: revert_pr
+        auto_trigger: ci_failure_on_main
+        max_rollback_time: 10m
+
+      publish_dns:
+        method: dnscontrol_revert
+        auto_trigger: dns_health_check_failure
+        max_rollback_time: 5m
+        note: "TTL determines propagation delay — lower TTLs before risky changes"
+
+      deploy_production:
+        method: blue_green_switch
+        auto_trigger: health_check_failure
+        max_rollback_time: 2m
+
+      modify_cloudflare:
+        method: api_revert
+        auto_trigger: origin_unreachable
+        max_rollback_time: 5m
+
+      bulk_dns_update:
+        method: snapshot_restore
+        auto_trigger: validation_failure
+        max_rollback_time: 15m
+        pre_action: create_zone_snapshot
+
+  # ─── Audit Logging ────────────────────────────────────────────────
+  # Every action — approved or denied — is logged.
+
+  audit:
+    log_format: structured_json
+    required_fields:
+      - timestamp
+      - agent_name
+      - agent_division
+      - action_type
+      - risk_level
+      - confidence_score
+      - approval_status
+      - approver
+      - input_summary
+      - output_summary
+      - rollback_available
+      - session_id
+
+    retention:
+      low_risk: 30d
+      medium_risk: 90d
+      high_risk: 1y
+      critical_risk: indefinite
+
+    alerts:
+      denied_actions: notify_maintainers
+      rollback_triggered: notify_all
+      policy_violation: notify_admins_immediate
+
+  # ─── Agent Role Contracts ─────────────────────────────────────────
+  # Each division has a maximum risk level it can execute autonomously.
+
+  role_contracts:
+    engineering:
+      max_autonomous_risk: medium
+      allowed_high_risk:
+        - create_pr
+        - run_tests
+      forbidden:
+        - publish_dns
+        - modify_cloudflare
+
+    design:
+      max_autonomous_risk: low
+      allowed_medium_risk:
+        - edit_file
+        - create_pr
+
+    operations:
+      max_autonomous_risk: medium
+      allowed_high_risk:
+        - publish_dns
+        - modify_cloudflare
+      requires_approval_for:
+        - bulk_dns_update
+        - modify_dnsconfig
+
+    community:
+      max_autonomous_risk: medium
+      allowed_high_risk:
+        - merge_pr
+        - add_label
+      forbidden:
+        - modify_dnsconfig
+        - deploy_production
+
+    security:
+      max_autonomous_risk: medium
+      allowed_high_risk:
+        - ban_user
+      requires_approval_for:
+        - revoke_access
+
+    quality:
+      max_autonomous_risk: medium
+      allowed_high_risk:
+        - run_tests
+      forbidden:
+        - merge_pr
+        - deploy_production
+
+    marketing:
+      max_autonomous_risk: low
+      allowed_medium_risk:
+        - edit_file
+        - create_pr
+      forbidden:
+        - publish_dns
+        - deploy_production
+
+    product:
+      max_autonomous_risk: low
+      allowed_medium_risk:
+        - create_pr
+        - assign_reviewer
+
+    support:
+      max_autonomous_risk: medium
+      allowed_high_risk:
+        - send_notification
+      forbidden:
+        - delete_domain
+        - modify_dnsconfig
+
+    strategy:
+      max_autonomous_risk: low
+      allowed_medium_risk:
+        - create_pr
+
+    project-management:
+      max_autonomous_risk: low
+      allowed_medium_risk:
+        - add_label
+        - assign_reviewer
+
+    specialized:
+      max_autonomous_risk: medium
+      allowed_high_risk:
+        - publish_dns
+        - modify_dnsconfig
+      requires_approval_for:
+        - bulk_dns_update
+        - delete_zone
+
+    control-plane:
+      max_autonomous_risk: high
+      note: "The control plane enforces policy — it has elevated permissions by design"
+      requires_approval_for:
+        - modify_policy
+        - override_denial
