@@ -1,5 +1,6 @@
 using Water.Core;
 using Xunit;
+using ExecutionContext = Water.Core.ExecutionContext;
 
 namespace Water.Tests;
 
@@ -38,7 +39,7 @@ public class ExecutionContextTests
     public void Context_ThrowsOnMissingService()
     {
         var ctx = new ExecutionContext("flow1");
-        Assert.Throws<KeyNotFoundException>(() => ctx.GetService("missing"));
+        Assert.Throws<KeyNotFoundException>(() => { ctx.GetService("missing"); });
     }
 
     [Fact]
@@ -46,7 +47,7 @@ public class ExecutionContextTests
     {
         var ctx = new ExecutionContext("flow1");
         ctx.RegisterService("number", 42);
-        Assert.Throws<InvalidCastException>(() => ctx.GetService<string>("number"));
+        Assert.Throws<InvalidCastException>(() => { ctx.GetService<string>("number"); });
     }
 
     [Fact]

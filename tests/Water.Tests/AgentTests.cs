@@ -1,6 +1,7 @@
 using Water.Agents;
 using Water.Core;
 using Xunit;
+using ExecutionContext = Water.Core.ExecutionContext;
 
 namespace Water.Tests;
 

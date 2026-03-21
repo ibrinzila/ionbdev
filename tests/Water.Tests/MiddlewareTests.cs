@@ -1,26 +1,35 @@
 using Water.Core;
 using Water.Middleware;
 using Xunit;
+using ExecutionContext = Water.Core.ExecutionContext;
+using TaskFactory = Water.Core.TaskFactory;
 
 namespace Water.Tests;
 
 public class MiddlewareTests
 {
+    private static Dictionary<string, object?> ExtractData(Dictionary<string, object?> input)
+    {
+        return input.TryGetValue("input_data", out var d) && d is Dictionary<string, object?> data
+            ? data : input;
+    }
+
     [Fact]
     public async Task TransformMiddleware_TransformsData()
     {
-        var beforeFn = (string taskId, Dictionary<string, object?> data, ExecutionContext ctx) =>
-        {
-            data["added_by_middleware"] = true;
-            return Task.FromResult(data);
-        };
+        Func<string, Dictionary<string, object?>, ExecutionContext, Task<Dictionary<string, object?>>> beforeFn =
+            (taskId, data, ctx) =>
+            {
+                data["added_by_middleware"] = true;
+                return Task.FromResult(data);
+            };
 
         var middleware = new TransformMiddleware(beforeFn: beforeFn);
 
         var task = TaskFactory.CreateSync(
             (input, ctx) =>
             {
-                var data = input.TryGetValue("input_data", out var d) && d is Dictionary<string, object?> dict ? dict : input;
+                var data = ExtractData(input);
                 return new Dictionary<string, object?>
                 {
                     ["has_middleware_field"] = data.ContainsKey("added_by_middleware")

@@ -73,6 +73,6 @@ public static class CacheHelper
     {
         var payload = JsonSerializer.Serialize(new { task_id = taskId, data }, new JsonSerializerOptions { WriteIndented = false });
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
-        return Convert.ToHexStringLower(hash);
+        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
     }
 }

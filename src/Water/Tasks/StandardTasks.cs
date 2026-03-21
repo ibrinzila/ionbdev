@@ -1,4 +1,5 @@
 using Water.Core;
+using TaskFactory = Water.Core.TaskFactory;
 
 namespace Water.Tasks;
 
@@ -49,8 +50,8 @@ public static class StandardTasks
         return TaskFactory.CreateSync(
             (parameters, context) =>
             {
-                var data = parameters.TryGetValue("input_data", out var inp) && inp is Dictionary<string, object?> dict
-                    ? dict : parameters;
+                var data = parameters.TryGetValue("input_data", out var inp) && inp is Dictionary<string, object?> d
+                    ? d : parameters;
 
                 var result = new Dictionary<string, object?>();
                 foreach (var (target, source) in fieldMapping)
@@ -89,8 +90,8 @@ public static class StandardTasks
         return TaskFactory.CreateSync(
             (parameters, context) =>
             {
-                var data = parameters.TryGetValue("input_data", out var inp) && inp is Dictionary<string, object?> dict
-                    ? dict : parameters;
+                var data = parameters.TryGetValue("input_data", out var inp2) && inp2 is Dictionary<string, object?> d2
+                    ? d2 : parameters;
                 Console.WriteLine($"[LOG] Task={context.TaskId} Data={System.Text.Json.JsonSerializer.Serialize(data)}");
                 return new Dictionary<string, object?>(data);
             },
@@ -106,8 +107,8 @@ public static class StandardTasks
         return TaskFactory.CreateSync(
             (parameters, context) =>
             {
-                var data = parameters.TryGetValue("input_data", out var inp) && inp is Dictionary<string, object?> dict
-                    ? dict : parameters;
+                var data = parameters.TryGetValue("input_data", out var inp3) && inp3 is Dictionary<string, object?> d3
+                    ? d3 : parameters;
                 return new Dictionary<string, object?>(data);
             },
             id: id ?? "noop",

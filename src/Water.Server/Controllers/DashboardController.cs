@@ -50,7 +50,7 @@ public class DashboardController : ControllerBase
         {
             id = f.Id,
             description = f.Description,
-            task_count = f.Tasks.Count
+            task_count = f.ExecutionGraph.Count
         });
         return Ok(new { flows });
     }

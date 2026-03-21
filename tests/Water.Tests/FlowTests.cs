@@ -1,18 +1,31 @@
 using Water.Core;
 using Xunit;
+using ExecutionContext = Water.Core.ExecutionContext;
+using TaskFactory = Water.Core.TaskFactory;
 
 namespace Water.Tests;
 
 public class FlowTests
 {
+    private static Dictionary<string, object?> ExtractData(Dictionary<string, object?> input)
+    {
+        return input.TryGetValue("input_data", out var d) && d is Dictionary<string, object?> data
+            ? data : input;
+    }
+
+    private static int GetInt(Dictionary<string, object?> data, string key, int defaultValue = 0)
+    {
+        return data.TryGetValue(key, out var v) && v is int i ? i : defaultValue;
+    }
+
     [Fact]
     public async Task SequentialFlow_ExecutesTasks()
     {
         var task1 = TaskFactory.CreateSync(
             (input, ctx) =>
             {
-                var data = input.TryGetValue("input_data", out var d) && d is Dictionary<string, object?> dict ? dict : input;
-                var value = data.TryGetValue("value", out var v) && v is int i ? i : 0;
+                var data = ExtractData(input);
+                var value = GetInt(data, "value");
                 return new Dictionary<string, object?> { ["value"] = value + 1 };
             },
             id: "add_one");
@@ -20,8 +33,8 @@ public class FlowTests
         var task2 = TaskFactory.CreateSync(
             (input, ctx) =>
             {
-                var data = input.TryGetValue("input_data", out var d) && d is Dictionary<string, object?> dict ? dict : input;
-                var value = data.TryGetValue("value", out var v) && v is int i ? i : 0;
+                var data = ExtractData(input);
+                var value = GetInt(data, "value");
                 return new Dictionary<string, object?> { ["value"] = value * 2 };
             },
             id: "double");
@@ -86,8 +99,8 @@ public class FlowTests
         var incrementTask = TaskFactory.CreateSync(
             (input, ctx) =>
             {
-                var data = input.TryGetValue("input_data", out var d) && d is Dictionary<string, object?> dict ? dict : input;
-                var count = data.TryGetValue("count", out var c) && c is int i ? i : 0;
+                var data = ExtractData(input);
+                var count = GetInt(data, "count");
                 return new Dictionary<string, object?> { ["count"] = count + 1 };
             },
             id: "increment");
@@ -112,7 +125,7 @@ public class FlowTests
         var catchTask = TaskFactory.CreateSync(
             (input, ctx) =>
             {
-                var data = input.TryGetValue("input_data", out var d) && d is Dictionary<string, object?> dict ? dict : input;
+                var data = ExtractData(input);
                 return new Dictionary<string, object?>
                 {
                     ["recovered"] = true,

@@ -80,7 +80,7 @@ public class FlowsController : ControllerBase
     {
         var taskInfos = new List<TaskInfoDto>();
 
-        foreach (var node in flow.Tasks)
+        foreach (var node in flow.ExecutionGraph)
         {
             switch (node.Type)
             {

@@ -19,8 +19,8 @@ public class Flow
     public EventEmitter? Events { get; set; }
     public List<IMiddleware> MiddlewareList { get; set; } = new();
 
-    internal List<ExecutionNode> Tasks { get; } = new();
-    internal bool Registered { get; private set; }
+    public List<ExecutionNode> ExecutionGraph { get; } = new();
+    public bool Registered { get; private set; }
     internal IStorageBackend? Storage { get; set; }
     internal object? Checkpoint { get; set; }
     internal IDeadLetterQueue? Dlq { get; set; }
@@ -97,7 +97,7 @@ public class Flow
             When = when,
             Fallback = fallback
         };
-        Tasks.Add(node);
+        ExecutionGraph.Add(node);
         return this;
     }
 
@@ -111,7 +111,7 @@ public class Flow
         if (string.IsNullOrEmpty(over))
             throw new ArgumentException("Map 'over' key cannot be empty", nameof(over));
 
-        Tasks.Add(new ExecutionNode
+        ExecutionGraph.Add(new ExecutionNode
         {
             Type = NodeType.Map,
             Task = task,
@@ -131,7 +131,7 @@ public class Flow
 
         foreach (var task in tasks) ValidateTask(task);
 
-        Tasks.Add(new ExecutionNode
+        ExecutionGraph.Add(new ExecutionNode
         {
             Type = NodeType.Dag,
             Tasks = tasks,
@@ -151,7 +151,7 @@ public class Flow
 
         foreach (var task in tasks) ValidateTask(task);
 
-        Tasks.Add(new ExecutionNode
+        ExecutionGraph.Add(new ExecutionNode
         {
             Type = NodeType.Parallel,
             Tasks = tasks
@@ -174,7 +174,7 @@ public class Flow
             return new BranchCondition { Condition = b.condition, Task = b.task };
         }).ToList();
 
-        Tasks.Add(new ExecutionNode
+        ExecutionGraph.Add(new ExecutionNode
         {
             Type = NodeType.Branch,
             Branches = branchConditions
@@ -193,7 +193,7 @@ public class Flow
         ValidateRegistrationState();
         ValidateTask(task);
 
-        Tasks.Add(new ExecutionNode
+        ExecutionGraph.Add(new ExecutionNode
         {
             Type = NodeType.Loop,
             Condition = condition,
@@ -212,7 +212,7 @@ public class Flow
         ValidateTask(task);
         ValidateTask(catchTask);
 
-        Tasks.Add(new ExecutionNode
+        ExecutionGraph.Add(new ExecutionNode
         {
             Type = NodeType.TryCatch,
             Task = task,
@@ -250,7 +250,7 @@ public class Flow
         try
         {
             var result = await ExecutionEngine.RunAsync(
-                Tasks,
+                ExecutionGraph,
                 inputData,
                 Id,
                 Metadata,
