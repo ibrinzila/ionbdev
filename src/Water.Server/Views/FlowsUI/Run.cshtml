@@ -1,0 +1,41 @@
+@model Water.Server.Models.RunFlowViewModel
+
+<div class="page-header">
+    <h1>Run: @Model.FlowId</h1>
+    <p>@Model.Description</p>
+</div>
+
+<div style="margin-bottom: 1.5rem;">
+    <a asp-action="Detail" asp-route-id="@Model.FlowId" class="btn">Back to Flow</a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (TempData["Result"] != null)
+{
+    <div class="card">
+        <div class="card-header">
+            <h2>Result</h2>
+        </div>
+        <div class="code-block">@TempData["Result"]</div>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h2>Input Data (JSON)</h2>
+    </div>
+    <form asp-action="Execute" asp-route-id="@Model.FlowId" method="post">
+        <textarea name="inputJson" rows="8" style="width:100%;background:var(--bg);color:var(--cyan);border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.9rem;resize:vertical;">{}</textarea>
+        <div style="margin-top:1rem;">
+            <button type="submit" class="btn btn-primary">Execute Flow</button>
+        </div>
+    </form>
+</div>

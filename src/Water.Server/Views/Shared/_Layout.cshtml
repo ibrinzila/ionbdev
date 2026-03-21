@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Water</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+            <span class="logo">W</span>
+            Water
+        </a>
+        <ul class="navbar-nav">
+            <li><a asp-controller="Home" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">Home</a></li>
+            <li><a asp-controller="FlowsUI" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "FlowsUI" ? "active" : "")">Flows</a></li>
+            <li><a asp-controller="DashboardUI" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "DashboardUI" ? "active" : "")">Dashboard</a></li>
+        </ul>
+        <div class="navbar-status">
+            <span class="status-dot"></span>
+            System Online
+        </div>
+    </nav>
+
+    <main class="container">
+        @RenderBody()
+    </main>
+
+    <footer class="footer">
+        Water Framework v1.0.0 &mdash; Agent Harness for Production AI
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

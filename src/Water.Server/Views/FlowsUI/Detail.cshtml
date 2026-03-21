@@ -1,0 +1,93 @@
+@model Water.Server.Models.FlowDetailViewModel
+
+<div class="page-header">
+    <h1>@Model.Id</h1>
+    <p>@Model.Description</p>
+</div>
+
+<div style="margin-bottom: 1.5rem;">
+    <a asp-action="Run" asp-route-id="@Model.Id" class="btn btn-primary">Run Flow</a>
+    <a asp-action="Index" class="btn">Back to Flows</a>
+</div>
+
+<div class="detail-grid">
+    <div class="card">
+        <div class="card-header">
+            <h2>Pipeline Tasks</h2>
+        </div>
+        @if (Model.Tasks.Any())
+        {
+            <ul class="timeline">
+                @foreach (var task in Model.Tasks)
+                {
+                    <li>
+                        <div class="tl-title">@task.Id <span class="badge badge-@task.Type" style="margin-left:0.5rem;">@task.Type</span></div>
+                        <div class="tl-time">@task.Description</div>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p style="color:var(--text-muted);">No tasks in pipeline</p>
+        }
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Metadata</h2>
+        </div>
+        @if (Model.Metadata.Any())
+        {
+            <ul class="kv-list">
+                @foreach (var kvp in Model.Metadata)
+                {
+                    <li>
+                        <span class="kv-key">@kvp.Key</span>
+                        <span>@kvp.Value</span>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p style="color:var(--text-muted);">No metadata</p>
+        }
+    </div>
+</div>
+
+@if (Model.Sessions.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <h2>Execution History</h2>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Execution ID</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var session in Model.Sessions)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="DashboardUI" asp-action="Session" asp-route-id="@session.ExecutionId">
+                                    @(session.ExecutionId.Length > 12 ? session.ExecutionId[..12] + "..." : session.ExecutionId)
+                                </a>
+                            </td>
+                            <td><span class="badge badge-@session.Status">@session.Status</span></td>
+                            <td>@session.CreatedAt</td>
+                            <td style="color:var(--red);">@(session.Error ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

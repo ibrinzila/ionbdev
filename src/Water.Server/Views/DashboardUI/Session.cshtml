@@ -1,0 +1,74 @@
+@model Water.Server.Models.SessionDetailViewModel
+
+<div class="page-header">
+    <h1>Session Detail</h1>
+    <p>Execution: @Model.ExecutionId</p>
+</div>
+
+<div style="margin-bottom: 1.5rem;">
+    <a asp-action="Index" class="btn">Back to Dashboard</a>
+    <a asp-controller="FlowsUI" asp-action="Detail" asp-route-id="@Model.FlowId" class="btn">View Flow</a>
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+    <div class="stat-card @(Model.Status == "completed" ? "green" : Model.Status == "failed" ? "red" : Model.Status == "running" ? "blue" : "yellow")">
+        <div class="stat-label">Status</div>
+        <div class="stat-value" style="font-size:1.5rem;">@Model.Status.ToUpper()</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Flow</div>
+        <div class="stat-value" style="font-size:1rem;">@Model.FlowId</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Created</div>
+        <div class="stat-value" style="font-size:0.85rem;">@Model.CreatedAt</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Updated</div>
+        <div class="stat-value" style="font-size:0.85rem;">@Model.UpdatedAt</div>
+    </div>
+</div>
+
+@if (Model.Error != null)
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+
+<div class="detail-grid">
+    <div class="card">
+        <div class="card-header"><h2>Input Data</h2></div>
+        <div class="code-block">@Model.InputDataJson</div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h2>Result</h2></div>
+        <div class="code-block">@Model.ResultJson</div>
+    </div>
+</div>
+
+@if (Model.TaskRuns.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <h2>Task Runs</h2>
+        </div>
+        <ul class="timeline">
+            @foreach (var run in Model.TaskRuns)
+            {
+                <li class="@run.Status">
+                    <div class="tl-title">
+                        @run.TaskId
+                        <span class="badge badge-@run.Status" style="margin-left:0.5rem;">@run.Status</span>
+                    </div>
+                    <div class="tl-time">
+                        @if (run.StartedAt != null) { <span>Started: @run.StartedAt</span> }
+                        @if (run.CompletedAt != null) { <span> | Completed: @run.CompletedAt</span> }
+                    </div>
+                    @if (run.Error != null)
+                    {
+                        <div style="color:var(--red);font-size:0.85rem;margin-top:0.25rem;">@run.Error</div>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+}

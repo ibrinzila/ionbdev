@@ -1,0 +1,86 @@
+@model Water.Server.Models.DashboardViewModel
+
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Monitor flow executions and session history</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card cyan">
+        <div class="stat-label">Total Sessions</div>
+        <div class="stat-value">@Model.TotalSessions</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value">@Model.Completed</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-label">Running</div>
+        <div class="stat-value">@Model.Running</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-label">Failed</div>
+        <div class="stat-value">@Model.Failed</div>
+    </div>
+    <div class="stat-card yellow">
+        <div class="stat-label">Paused</div>
+        <div class="stat-value">@Model.Paused</div>
+    </div>
+    <div class="stat-card purple">
+        <div class="stat-label">Success Rate</div>
+        <div class="stat-value">@Model.SuccessRate%</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Session History</h2>
+    </div>
+
+    @if (Model.Sessions.Any())
+    {
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Execution ID</th>
+                        <th>Flow</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Updated</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var session in Model.Sessions)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Session" asp-route-id="@session.ExecutionId">
+                                    @(session.ExecutionId.Length > 12 ? session.ExecutionId[..12] + "..." : session.ExecutionId)
+                                </a>
+                            </td>
+                            <td>
+                                <a asp-controller="FlowsUI" asp-action="Detail" asp-route-id="@session.FlowId">
+                                    @session.FlowId
+                                </a>
+                            </td>
+                            <td><span class="badge badge-@session.Status">@session.Status</span></td>
+                            <td>@session.CreatedAt</td>
+                            <td>@session.UpdatedAt</td>
+                            <td style="color:var(--red);max-width:200px;overflow:hidden;text-overflow:ellipsis;">@(session.Error ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-icon">~</div>
+            <h3>No sessions yet</h3>
+            <p>Run a flow to see session data here</p>
+        </div>
+    }
+</div>

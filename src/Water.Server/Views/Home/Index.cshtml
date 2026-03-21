@@ -1,0 +1,101 @@
+@model Water.Server.Models.HomeViewModel
+
+<div class="page-header">
+    <h1>Water Framework</h1>
+    <p>Production-ready agent harness for AI workflows</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="stat-label">Registered Flows</div>
+        <div class="stat-value">@Model.TotalFlows</div>
+    </div>
+    <div class="stat-card cyan">
+        <div class="stat-label">Total Sessions</div>
+        <div class="stat-value">@Model.TotalSessions</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value">@Model.Completed</div>
+    </div>
+    <div class="stat-card yellow">
+        <div class="stat-label">Running</div>
+        <div class="stat-value">@Model.Running</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-label">Failed</div>
+        <div class="stat-value">@Model.Failed</div>
+    </div>
+    <div class="stat-card purple">
+        <div class="stat-label">Paused</div>
+        <div class="stat-value">@Model.Paused</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Registered Flows</h2>
+        <a asp-controller="FlowsUI" asp-action="Index" class="btn btn-sm">View All</a>
+    </div>
+
+    @if (Model.RecentFlows.Any())
+    {
+        <div class="flow-grid">
+            @foreach (var flow in Model.RecentFlows)
+            {
+                <a asp-controller="FlowsUI" asp-action="Detail" asp-route-id="@flow.Id" class="flow-card" style="text-decoration:none;color:inherit;">
+                    <h3>@flow.Id</h3>
+                    <div class="flow-desc">@flow.Description</div>
+                    <div class="flow-meta">
+                        <span class="badge badge-sequential">@flow.TaskCount tasks</span>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-icon">~</div>
+            <h3>No flows registered</h3>
+            <p>Register flows in Program.cs to see them here</p>
+        </div>
+    }
+</div>
+
+@if (Model.RecentSessions.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <h2>Recent Sessions</h2>
+            <a asp-controller="DashboardUI" asp-action="Index" class="btn btn-sm">View All</a>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Execution ID</th>
+                        <th>Flow</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var session in Model.RecentSessions)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="DashboardUI" asp-action="Session" asp-route-id="@session.ExecutionId">
+                                    @(session.ExecutionId.Length > 12 ? session.ExecutionId[..12] + "..." : session.ExecutionId)
+                                </a>
+                            </td>
+                            <td>@session.FlowId</td>
+                            <td><span class="badge badge-@session.Status">@session.Status</span></td>
+                            <td>@session.CreatedAt</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

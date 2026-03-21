@@ -1,0 +1,37 @@
+@model List<Water.Server.Models.FlowCardViewModel>
+
+<div class="page-header">
+    <h1>Flows</h1>
+    <p>All registered Water flows and their task pipelines</p>
+</div>
+
+@if (Model.Any())
+{
+    <div class="flow-grid">
+        @foreach (var flow in Model)
+        {
+            <a asp-action="Detail" asp-route-id="@flow.Id" class="flow-card" style="text-decoration:none;color:inherit;">
+                <h3>@flow.Id</h3>
+                <div class="flow-desc">@flow.Description</div>
+                <div class="flow-meta">
+                    @foreach (var task in flow.Tasks)
+                    {
+                        <span class="badge badge-@task.Type">@task.Id</span>
+                    }
+                    @if (!flow.Tasks.Any())
+                    {
+                        <span class="badge badge-pending">@flow.TaskCount nodes</span>
+                    }
+                </div>
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div class="empty-state">
+        <div class="empty-icon">~</div>
+        <h3>No flows registered</h3>
+        <p>Register flows with the FlowRegistry in Program.cs</p>
+    </div>
+}
