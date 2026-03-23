@@ -1,0 +1,35 @@
+@model CloudSyncViewModel
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4><i class="bi bi-cloud"></i> Login to SpecStory Cloud</h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <p>To connect your account, visit the login page below and paste the refresh token here.</p>
+                    <a href="@Model.CloudUrl" target="_blank" class="btn btn-primary btn-lg">
+                        <i class="bi bi-box-arrow-up-right"></i> Open SpecStory Cloud Login
+                    </a>
+                </div>
+
+                <hr />
+
+                <form asp-action="LoginCallback" method="post">
+                    <div class="mb-3">
+                        <label for="refreshToken" class="form-label">Refresh Token</label>
+                        <textarea name="refreshToken" id="refreshToken" class="form-control"
+                                  rows="3" placeholder="Paste your refresh token here..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Complete Login
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

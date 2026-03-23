@@ -1,0 +1,113 @@
+@model List<ProviderCheckResult>
+@{
+    ViewData["Title"] = "Providers";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-plug"></i> Agent Providers</h1>
+        <p class="text-muted">Status of supported AI coding agent integrations</p>
+    </div>
+</div>
+
+<div class="row">
+    @foreach (var provider in Model)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">@provider.ProviderName</h5>
+                    @if (provider.IsInstalled)
+                    {
+                        <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Installed</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary"><i class="bi bi-x-circle-fill"></i> Not Found</span>
+                    }
+                </div>
+                <div class="card-body">
+                    <dl>
+                        <dt>Provider ID</dt>
+                        <dd><code>@provider.ProviderId</code></dd>
+
+                        @if (!string.IsNullOrEmpty(provider.Version))
+                        {
+                            <dt>Version</dt>
+                            <dd>@provider.Version</dd>
+                        }
+
+                        @if (!string.IsNullOrEmpty(provider.Location))
+                        {
+                            <dt>Location</dt>
+                            <dd class="font-monospace small text-break">@provider.Location</dd>
+                        }
+
+                        @if (!string.IsNullOrEmpty(provider.Error))
+                        {
+                            <dt>Error</dt>
+                            <dd class="text-danger">@provider.Error</dd>
+                        }
+                    </dl>
+                </div>
+                <div class="card-footer">
+                    <a asp-controller="Sessions" asp-action="Index"
+                       asp-route-provider="@provider.ProviderId"
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-list"></i> View Sessions
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Supported Agents</h5>
+    </div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Agent</th>
+                    <th>Provider ID</th>
+                    <th>Data Format</th>
+                    <th>Data Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Claude Code</strong></td>
+                    <td><code>claude-code</code></td>
+                    <td>JSONL</td>
+                    <td><code>~/.claude/projects/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Cursor CLI</strong></td>
+                    <td><code>cursor-cli</code></td>
+                    <td>SQLite</td>
+                    <td><code>~/.cursor/chats/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Codex CLI</strong></td>
+                    <td><code>codex-cli</code></td>
+                    <td>JSONL</td>
+                    <td><code>~/.codex/sessions/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Gemini CLI</strong></td>
+                    <td><code>gemini-cli</code></td>
+                    <td>JSON</td>
+                    <td><code>~/.gemini/tmp/</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Droid CLI</strong></td>
+                    <td><code>droid-cli</code></td>
+                    <td>JSONL</td>
+                    <td><code>~/.factory/sessions/</code></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

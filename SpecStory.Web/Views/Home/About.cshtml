@@ -1,0 +1,67 @@
+@{
+    ViewData["Title"] = "About";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="text-center mb-5">
+            <h1><i class="bi bi-journal-code"></i> SpecStory</h1>
+            <p class="lead">Turn your AI development conversations into searchable, shareable knowledge.</p>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>What is SpecStory?</h4>
+                <p>
+                    SpecStory captures, indexes, and makes searchable your AI development conversations
+                    from terminal coding agents. All sessions are automatically saved locally, with
+                    optional cloud synchronization for search and sharing.
+                </p>
+
+                <h4>Supported Agents</h4>
+                <ul>
+                    <li><strong>Claude Code</strong> - Anthropic's coding agent</li>
+                    <li><strong>Cursor CLI</strong> - Cursor's terminal agent</li>
+                    <li><strong>Codex CLI</strong> - OpenAI's coding agent</li>
+                    <li><strong>Gemini CLI</strong> - Google's coding agent</li>
+                    <li><strong>Droid CLI</strong> - Factory.ai's coding agent</li>
+                </ul>
+
+                <h4>Key Features</h4>
+                <ul>
+                    <li>Local-first storage in <code>.specstory/history/</code></li>
+                    <li>Unified session data schema across all providers</li>
+                    <li>Markdown generation from AI sessions</li>
+                    <li>Optional cloud sync to SpecStory Cloud</li>
+                    <li>Real-time session monitoring via file watchers</li>
+                    <li>REST API for programmatic access</li>
+                    <li>OpenTelemetry observability support</li>
+                    <li>Session statistics and analytics</li>
+                </ul>
+
+                <h4>API Endpoints</h4>
+                <table class="table table-sm">
+                    <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>GET</code></td><td><code>/api/sessions</code></td><td>List all sessions</td></tr>
+                        <tr><td><code>GET</code></td><td><code>/api/sessions/{id}</code></td><td>Get session details</td></tr>
+                        <tr><td><code>GET</code></td><td><code>/api/sessions/{id}/markdown</code></td><td>Get session as markdown</td></tr>
+                        <tr><td><code>GET</code></td><td><code>/api/sessions/{id}/stats</code></td><td>Get session statistics</td></tr>
+                        <tr><td><code>GET</code></td><td><code>/api/providers</code></td><td>List all providers</td></tr>
+                        <tr><td><code>POST</code></td><td><code>/api/sync</code></td><td>Sync all sessions to cloud</td></tr>
+                        <tr><td><code>POST</code></td><td><code>/api/sync/{id}</code></td><td>Sync specific session</td></tr>
+                        <tr><td><code>GET</code></td><td><code>/api/auth/status</code></td><td>Check auth status</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="text-center text-muted">
+            <p>
+                <a href="https://specstory.com" target="_blank">specstory.com</a> |
+                <a href="https://github.com/specstoryai/getspecstory" target="_blank">GitHub</a>
+            </p>
+            <p><small>Licensed under Apache 2.0</small></p>
+        </div>
+    </div>
+</div>

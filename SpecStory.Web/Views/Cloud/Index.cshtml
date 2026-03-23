@@ -1,0 +1,141 @@
+@model CloudSyncViewModel
+@{
+    ViewData["Title"] = "Cloud Sync";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-cloud"></i> Cloud Sync</h1>
+        <p class="text-muted">Sync your sessions to SpecStory Cloud for search and sharing</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert alert-info">@Model.StatusMessage</div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <!-- Auth Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-lock"></i> Authentication</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.IsAuthenticated)
+                {
+                    <div class="alert alert-success mb-3">
+                        <i class="bi bi-check-circle-fill"></i> Authenticated
+                        @if (!string.IsNullOrEmpty(Model.UserEmail))
+                        {
+                            <span>as <strong>@Model.UserEmail</strong></span>
+                        }
+                    </div>
+                    <form asp-action="Logout" method="post">
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-triangle"></i> Not authenticated.
+                        Log in to sync sessions to the cloud.
+                    </div>
+                    <a asp-action="Login" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-in-right"></i> Login to SpecStory Cloud
+                    </a>
+                }
+            </div>
+        </div>
+
+        <!-- Sync Controls -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> Sync Controls</h5>
+            </div>
+            <div class="card-body">
+                <p>Sync status: <strong>@(Model.SyncEnabled ? "Enabled" : "Disabled")</strong></p>
+                <p>Cloud URL: <code>@Model.CloudUrl</code></p>
+
+                @if (Model.IsAuthenticated)
+                {
+                    <form asp-action="SyncAll" method="post" class="mt-3">
+                        <button type="submit" class="btn btn-primary"
+                                @(Model.IsAuthenticated ? "" : "disabled")>
+                            <i class="bi bi-cloud-upload"></i> Sync All Sessions
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <!-- Last Sync Result -->
+        @if (Model.LastSyncResult != null)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Last Sync Result</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <div class="text-success fs-3">@Model.LastSyncResult.Created</div>
+                            <small class="text-muted">Created</small>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-primary fs-3">@Model.LastSyncResult.Updated</div>
+                            <small class="text-muted">Updated</small>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-secondary fs-3">@Model.LastSyncResult.Skipped</div>
+                            <small class="text-muted">Skipped</small>
+                        </div>
+                        <div class="col-3">
+                            <div class="text-danger fs-3">@Model.LastSyncResult.Errored</div>
+                            <small class="text-muted">Errors</small>
+                        </div>
+                    </div>
+
+                    @if (Model.LastSyncResult.Errors.Any())
+                    {
+                        <div class="mt-3">
+                            <h6 class="text-danger">Errors:</h6>
+                            <ul class="small">
+                                @foreach (var error in Model.LastSyncResult.Errors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <small class="text-muted">Synced at: @Model.LastSyncResult.SyncedAt</small>
+                </div>
+            </div>
+        }
+
+        <!-- How It Works -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-question-circle"></i> How Cloud Sync Works</h5>
+            </div>
+            <div class="card-body">
+                <ol class="small">
+                    <li>Log in to your SpecStory Cloud account</li>
+                    <li>Sessions are automatically synced when changes are detected</li>
+                    <li>Use "Sync All" to manually push all local sessions</li>
+                    <li>Cloud sync uses a 10-second debounce to avoid excessive uploads</li>
+                    <li>All data is transmitted securely over HTTPS</li>
+                </ol>
+                <p class="small text-muted mb-0">
+                    Cloud sync can be configured in <a asp-controller="Config" asp-action="Index">Settings</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,202 @@
+/* SpecStory Web - Custom Styles */
+
+:root {
+    --ss-primary: #6366f1;
+    --ss-primary-dark: #4f46e5;
+    --ss-bg-dark: #1e1e2e;
+    --ss-bg-card: #f8f9fa;
+}
+
+/* Layout */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f0f2f5;
+    min-height: 100vh;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.navbar-brand i {
+    color: var(--ss-primary);
+}
+
+main {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Cards */
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+}
+
+/* Stats Cards */
+.card.bg-primary,
+.card.bg-success,
+.card.bg-info,
+.card.bg-warning {
+    border-radius: 12px;
+}
+
+.card.bg-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
+.card.bg-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important; }
+.card.bg-info { background: linear-gradient(135deg, #2196f3 0%, #21cbf3 100%) !important; }
+.card.bg-warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important; color: white !important; }
+
+/* Session Detail */
+.message-content {
+    background: white;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #e9ecef;
+}
+
+.message-content pre {
+    background: #f6f8fa;
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.875rem;
+}
+
+.message-content code {
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.875rem;
+}
+
+.thinking-text {
+    font-size: 0.85rem;
+    color: #666;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    padding: 8px 12px;
+}
+
+.tool-use {
+    background: #f0f9ff !important;
+    border-color: #bae6fd !important;
+}
+
+.tool-use .badge {
+    font-size: 0.7rem;
+}
+
+/* Rendered Markdown */
+.rendered-markdown {
+    line-height: 1.8;
+}
+
+.rendered-markdown h1 { font-size: 1.75rem; margin-top: 1.5rem; }
+.rendered-markdown h2 { font-size: 1.5rem; margin-top: 1.25rem; border-bottom: 1px solid #e9ecef; padding-bottom: 0.5rem; }
+.rendered-markdown h3 { font-size: 1.25rem; margin-top: 1rem; }
+
+.rendered-markdown pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.rendered-markdown blockquote {
+    border-left: 4px solid var(--ss-primary);
+    padding-left: 16px;
+    color: #555;
+    margin: 12px 0;
+}
+
+.rendered-markdown table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+}
+
+.rendered-markdown th,
+.rendered-markdown td {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+}
+
+.rendered-markdown th {
+    background: #f8f9fa;
+}
+
+/* Tables */
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #6c757d;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+}
+
+/* Pagination */
+.pagination .page-link {
+    border-radius: 6px;
+    margin: 0 2px;
+    border: none;
+    color: #333;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--ss-primary);
+}
+
+/* Footer */
+footer {
+    background: white;
+}
+
+/* Animations */
+.card {
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .row .col-md-3 {
+        margin-bottom: 1rem;
+    }
+
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+}
+
+/* Text utilities */
+.text-break {
+    word-break: break-all;
+}
+
+.font-monospace {
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace !important;
+    font-size: 0.85em;
+}

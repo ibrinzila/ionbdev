@@ -1,0 +1,164 @@
+@model SessionListViewModel
+@{
+    ViewData["Title"] = "Sessions";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-chat-left-text"></i> Sessions</h1>
+        <p class="text-muted">Browse AI development conversation sessions</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Provider</label>
+                <select name="provider" class="form-select">
+                    <option value="">All Providers</option>
+                    @foreach (var p in Model.AvailableProviders)
+                    {
+                        <option value="@p" selected="@(Model.FilterProvider == p)">@p</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input type="text" name="search" class="form-control" placeholder="Search sessions..."
+                       value="@Model.SearchQuery" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sort By</label>
+                <select name="sortBy" class="form-select">
+                    <option value="created_desc" selected="@(Model.SortBy == "created_desc")">Newest First</option>
+                    <option value="created_asc" selected="@(Model.SortBy == "created_asc")">Oldest First</option>
+                    <option value="name_asc" selected="@(Model.SortBy == "name_asc")">Name A-Z</option>
+                    <option value="name_desc" selected="@(Model.SortBy == "name_desc")">Name Z-A</option>
+                    <option value="provider_asc" selected="@(Model.SortBy == "provider_asc")">Provider</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>
+            Showing @((Model.Page - 1) * Model.PageSize + 1)-@Math.Min(Model.Page * Model.PageSize, Model.TotalCount)
+            of @Model.TotalCount sessions
+        </span>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Sessions.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Session</th>
+                            <th>Provider</th>
+                            <th>Created</th>
+                            <th>Workspace</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var session in Model.Sessions)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-action="Details"
+                                       asp-route-id="@session.SessionId"
+                                       asp-route-provider="@session.ProviderId"
+                                       class="text-decoration-none">
+                                        <i class="bi bi-journal-text"></i>
+                                        @(session.Name ?? session.SessionId[..Math.Min(16, session.SessionId.Length)] + "...")
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@session.ProviderName</span>
+                                </td>
+                                <td>
+                                    <small>@session.CreatedAt</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted font-monospace">
+                                        @(session.WorkspaceRoot != null && session.WorkspaceRoot.Length > 50
+                                            ? "..." + session.WorkspaceRoot[^50..]
+                                            : session.WorkspaceRoot)
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details"
+                                           asp-route-id="@session.SessionId"
+                                           asp-route-provider="@session.ProviderId"
+                                           class="btn btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Markdown"
+                                           asp-route-id="@session.SessionId"
+                                           asp-route-provider="@session.ProviderId"
+                                           class="btn btn-outline-secondary" title="Download Markdown"
+                                           target="_blank">
+                                            <i class="bi bi-markdown"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="p-5 text-center text-muted">
+                <i class="bi bi-search fs-1"></i>
+                <p class="mt-2">No sessions found matching your criteria.</p>
+            </div>
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-provider="@Model.FilterProvider"
+                           asp-route-search="@Model.SearchQuery"
+                           asp-route-sortBy="@Model.SortBy"
+                           asp-route-page="@(Model.Page - 1)">Previous</a>
+                    </li>
+                    @for (var i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.Page ? "active" : "")">
+                            <a class="page-link" asp-action="Index"
+                               asp-route-provider="@Model.FilterProvider"
+                               asp-route-search="@Model.SearchQuery"
+                               asp-route-sortBy="@Model.SortBy"
+                               asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-provider="@Model.FilterProvider"
+                           asp-route-search="@Model.SearchQuery"
+                           asp-route-sortBy="@Model.SortBy"
+                           asp-route-page="@(Model.Page + 1)">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

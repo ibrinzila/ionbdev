@@ -1,0 +1,159 @@
+@model ConfigurationViewModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-gear"></i> Settings</h1>
+        <p class="text-muted">Manage SpecStory configuration (user-level and project-level)</p>
+    </div>
+</div>
+
+<!-- Effective Configuration (Read-Only) -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-eye"></i> Effective Configuration</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">
+            This shows the merged configuration (project overrides user). Priority: CLI flags &gt; Project-level &gt; User-level
+        </p>
+        <div class="row">
+            <div class="col-md-4">
+                <h6>Local Sync</h6>
+                <dl class="small">
+                    <dt>Enabled</dt><dd>@Model.EffectiveConfig.LocalSync.Enabled</dd>
+                    <dt>Output Dir</dt><dd><code>@Model.EffectiveConfig.LocalSync.OutputDir</code></dd>
+                    <dt>Local Timezone</dt><dd>@Model.EffectiveConfig.LocalSync.LocalTimeZone</dd>
+                </dl>
+            </div>
+            <div class="col-md-4">
+                <h6>Cloud Sync</h6>
+                <dl class="small">
+                    <dt>Enabled</dt><dd>@Model.EffectiveConfig.CloudSync.Enabled</dd>
+                    <dt>Cloud URL</dt><dd><code>@Model.EffectiveConfig.CloudSync.CloudUrl</code></dd>
+                </dl>
+            </div>
+            <div class="col-md-4">
+                <h6>Telemetry</h6>
+                <dl class="small">
+                    <dt>Endpoint</dt><dd><code>@Model.EffectiveConfig.Telemetry.Endpoint</code></dd>
+                    <dt>Service Name</dt><dd><code>@Model.EffectiveConfig.Telemetry.ServiceName</code></dd>
+                    <dt>Include Prompts</dt><dd>@Model.EffectiveConfig.Telemetry.Prompts</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Configuration -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-person"></i> User Configuration</h5>
+        <small class="text-muted font-monospace">@Model.UserConfigPath</small>
+    </div>
+    <div class="card-body">
+        <form asp-action="SaveUser" method="post">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Local Sync</h6>
+                    <div class="mb-2 form-check">
+                        <input type="checkbox" class="form-check-input"
+                               name="LocalSync.Enabled" id="userLocalSyncEnabled"
+                               checked="@Model.UserConfig.LocalSync.Enabled" />
+                        <label class="form-check-label" for="userLocalSyncEnabled">Enabled</label>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Output Directory</label>
+                        <input type="text" class="form-control form-control-sm"
+                               name="LocalSync.OutputDir"
+                               value="@Model.UserConfig.LocalSync.OutputDir" />
+                    </div>
+                    <div class="mb-2 form-check">
+                        <input type="checkbox" class="form-check-input"
+                               name="LocalSync.LocalTimeZone" id="userLocalTimeZone"
+                               checked="@Model.UserConfig.LocalSync.LocalTimeZone" />
+                        <label class="form-check-label" for="userLocalTimeZone">Use Local Timezone</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Cloud Sync</h6>
+                    <div class="mb-2 form-check">
+                        <input type="checkbox" class="form-check-input"
+                               name="CloudSync.Enabled" id="userCloudSyncEnabled"
+                               checked="@Model.UserConfig.CloudSync.Enabled" />
+                        <label class="form-check-label" for="userCloudSyncEnabled">Enabled</label>
+                    </div>
+
+                    <h6 class="mt-3">Other</h6>
+                    <div class="mb-2 form-check">
+                        <input type="checkbox" class="form-check-input"
+                               name="Analytics.Enabled" id="userAnalyticsEnabled"
+                               checked="@Model.UserConfig.Analytics.Enabled" />
+                        <label class="form-check-label" for="userAnalyticsEnabled">Analytics Enabled</label>
+                    </div>
+                    <div class="mb-2 form-check">
+                        <input type="checkbox" class="form-check-input"
+                               name="VersionCheck.Enabled" id="userVersionCheckEnabled"
+                               checked="@Model.UserConfig.VersionCheck.Enabled" />
+                        <label class="form-check-label" for="userVersionCheckEnabled">Version Check Enabled</label>
+                    </div>
+                </div>
+            </div>
+
+            <h6 class="mt-3">Provider Commands</h6>
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <label class="form-label small">Claude Code</label>
+                    <input type="text" class="form-control form-control-sm"
+                           name="Providers.ClaudeCmd" value="@Model.UserConfig.Providers.ClaudeCmd" />
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label small">Codex CLI</label>
+                    <input type="text" class="form-control form-control-sm"
+                           name="Providers.CodexCmd" value="@Model.UserConfig.Providers.CodexCmd" />
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label small">Cursor CLI</label>
+                    <input type="text" class="form-control form-control-sm"
+                           name="Providers.CursorCmd" value="@Model.UserConfig.Providers.CursorCmd" />
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label small">Droid CLI</label>
+                    <input type="text" class="form-control form-control-sm"
+                           name="Providers.DroidCmd" value="@Model.UserConfig.Providers.DroidCmd" />
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label small">Gemini CLI</label>
+                    <input type="text" class="form-control form-control-sm"
+                           name="Providers.GeminiCmd" value="@Model.UserConfig.Providers.GeminiCmd" />
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">
+                <i class="bi bi-save"></i> Save User Config
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Logging Configuration -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-terminal"></i> Logging & Debug</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="small">
+                    <dt>Console Logging</dt><dd>@Model.EffectiveConfig.Logging.Console</dd>
+                    <dt>File Logging</dt><dd>@Model.EffectiveConfig.Logging.Log</dd>
+                    <dt>Debug Mode</dt><dd>@Model.EffectiveConfig.Logging.Debug</dd>
+                    <dt>Debug Directory</dt><dd><code>@Model.EffectiveConfig.Logging.DebugDir</code></dd>
+                    <dt>Silent Mode</dt><dd>@Model.EffectiveConfig.Logging.Silent</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

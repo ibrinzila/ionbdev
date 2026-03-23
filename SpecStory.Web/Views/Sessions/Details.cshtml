@@ -1,0 +1,298 @@
+@model SessionDetailViewModel
+@{
+    ViewData["Title"] = Model.Session.DisplayName;
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Sessions" asp-action="Index">Sessions</a></li>
+                <li class="breadcrumb-item active">@Model.Session.DisplayName</li>
+            </ol>
+        </nav>
+        <h1><i class="bi bi-journal-text"></i> @Model.Session.DisplayName</h1>
+        <div class="text-muted">
+            <span class="badge bg-secondary">@Model.Session.Provider.Name</span>
+            <span class="ms-2">Session: <code>@Model.Session.SessionId</code></span>
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="text-muted small">Exchanges</div>
+                <strong>@Model.Statistics.ExchangeCount</strong>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="text-muted small">Messages</div>
+                <strong>@Model.Statistics.MessageCount</strong>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="text-muted small">Tool Uses</div>
+                <strong>@Model.Statistics.ToolUseCount</strong>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="text-muted small">Input Tokens</div>
+                <strong>@Model.Statistics.TotalInputTokens.ToString("N0")</strong>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="text-muted small">Output Tokens</div>
+                <strong>@Model.Statistics.TotalOutputTokens.ToString("N0")</strong>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body py-2">
+                <div class="text-muted small">Duration</div>
+                <strong>@(Model.Statistics.Duration?.ToString(@"hh\:mm\:ss") ?? "N/A")</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-9">
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-conversation">
+                    <i class="bi bi-chat-left-text"></i> Conversation
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-rendered">
+                    <i class="bi bi-eye"></i> Rendered
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-markdown">
+                    <i class="bi bi-markdown"></i> Markdown
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Conversation View -->
+            <div class="tab-pane fade show active" id="tab-conversation">
+                @for (var i = 0; i < Model.Session.Exchanges.Count; i++)
+                {
+                    var exchange = Model.Session.Exchanges[i];
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <strong>Exchange @(i + 1)</strong>
+                            @if (!string.IsNullOrEmpty(exchange.StartTime))
+                            {
+                                <small class="text-muted ms-2">@exchange.StartTime</small>
+                            }
+                            <span class="badge bg-info float-end">@exchange.MessageCount messages</span>
+                        </div>
+                        <div class="card-body">
+                            @foreach (var message in exchange.Messages)
+                            {
+                                var isUser = message.Role == "user";
+                                <div class="mb-3 @(isUser ? "ps-0" : "ps-4")">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="badge @(isUser ? "bg-primary" : "bg-success") me-2">
+                                            <i class="bi @(isUser ? "bi-person" : "bi-robot")"></i>
+                                            @(isUser ? "User" : "Agent")
+                                        </span>
+                                        @if (!string.IsNullOrEmpty(message.Model))
+                                        {
+                                            <small class="text-muted">@message.Model</small>
+                                        }
+                                        @if (message.Usage != null && message.Usage.TotalTokens > 0)
+                                        {
+                                            <small class="text-muted ms-auto">
+                                                @message.Usage.InputTokens.ToString("N0") in /
+                                                @message.Usage.OutputTokens.ToString("N0") out
+                                            </small>
+                                        }
+                                    </div>
+                                    <div class="message-content">
+                                        @foreach (var part in message.Content.Where(c => c.Type == "thinking"))
+                                        {
+                                            <details class="mb-2">
+                                                <summary class="text-muted"><i class="bi bi-lightbulb"></i> Thinking</summary>
+                                                <div class="border-start border-warning ps-3 mt-1">
+                                                    <pre class="thinking-text">@part.Text</pre>
+                                                </div>
+                                            </details>
+                                        }
+                                        @foreach (var part in message.Content.Where(c => c.Type == "text"))
+                                        {
+                                            <div class="text-content">@Html.Raw(
+                                                new MarkdownService().ConvertMarkdownToHtml(part.Text))</div>
+                                        }
+                                        @if (message.Tool != null)
+                                        {
+                                            <div class="tool-use border rounded p-2 mt-2 bg-light">
+                                                <small>
+                                                    <i class="bi bi-wrench"></i>
+                                                    <strong>@message.Tool.Name</strong>
+                                                    <span class="badge bg-outline-secondary">@message.Tool.Type</span>
+                                                </small>
+                                                @if (!string.IsNullOrEmpty(message.Tool.Summary))
+                                                {
+                                                    <div class="mt-1 small text-muted">@message.Tool.Summary</div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Rendered HTML View -->
+            <div class="tab-pane fade" id="tab-rendered">
+                <div class="card">
+                    <div class="card-body rendered-markdown">
+                        @Html.Raw(Model.HtmlContent)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Raw Markdown View -->
+            <div class="tab-pane fade" id="tab-markdown">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-end mb-2">
+                            <a asp-action="Markdown"
+                               asp-route-id="@Model.Session.SessionId"
+                               asp-route-provider="@Model.Session.Provider.Id"
+                               class="btn btn-sm btn-outline-secondary" target="_blank">
+                                <i class="bi bi-download"></i> Download .md
+                            </a>
+                        </div>
+                        <pre class="bg-light p-3 rounded"><code>@Model.MarkdownContent</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+        <!-- Session Info -->
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">Session Info</h6></div>
+            <div class="card-body small">
+                <dl class="mb-0">
+                    <dt>Provider</dt>
+                    <dd>@Model.Session.Provider.Name</dd>
+                    <dt>Created</dt>
+                    <dd>@(Model.Session.CreatedAt ?? "Unknown")</dd>
+                    <dt>Updated</dt>
+                    <dd>@(Model.Session.UpdatedAt ?? "Unknown")</dd>
+                    @if (!string.IsNullOrEmpty(Model.Session.WorkspaceRoot))
+                    {
+                        <dt>Workspace</dt>
+                        <dd class="font-monospace text-break">@Model.Session.WorkspaceRoot</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        <!-- Models Used -->
+        @if (Model.Statistics.ModelsUsed.Any())
+        {
+            <div class="card mb-3">
+                <div class="card-header"><h6 class="mb-0">Models Used</h6></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var model in Model.Statistics.ModelsUsed)
+                    {
+                        <li class="list-group-item small">
+                            <i class="bi bi-cpu"></i> @model
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <!-- Tool Usage -->
+        @if (Model.Statistics.ToolUsageByType.Any())
+        {
+            <div class="card mb-3">
+                <div class="card-header"><h6 class="mb-0">Tool Usage</h6></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var kvp in Model.Statistics.ToolUsageByType.OrderByDescending(x => x.Value))
+                    {
+                        <li class="list-group-item d-flex justify-content-between small">
+                            <span>@kvp.Key</span>
+                            <span class="badge bg-info">@kvp.Value</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <!-- Files Referenced -->
+        @if (Model.Statistics.FilesReferenced.Any())
+        {
+            <div class="card mb-3">
+                <div class="card-header"><h6 class="mb-0">Files Referenced</h6></div>
+                <div class="card-body small" style="max-height: 300px; overflow-y: auto;">
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var file in Model.Statistics.FilesReferenced.Take(20))
+                        {
+                            <li class="font-monospace text-break mb-1">
+                                <i class="bi bi-file-earmark-code"></i> @file
+                            </li>
+                        }
+                        @if (Model.Statistics.FilesReferenced.Count > 20)
+                        {
+                            <li class="text-muted">...and @(Model.Statistics.FilesReferenced.Count - 20) more</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        <!-- Actions -->
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Actions</h6></div>
+            <div class="card-body">
+                <form asp-action="Sync" method="post" class="mb-2">
+                    <input type="hidden" name="id" value="@Model.Session.SessionId" />
+                    <input type="hidden" name="provider" value="@Model.Session.Provider.Id" />
+                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-cloud-upload"></i> Sync to Cloud
+                    </button>
+                </form>
+                <a asp-action="Markdown"
+                   asp-route-id="@Model.Session.SessionId"
+                   asp-route-provider="@Model.Session.Provider.Id"
+                   class="btn btn-outline-secondary btn-sm w-100"
+                   target="_blank">
+                    <i class="bi bi-download"></i> Download Markdown
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@using SpecStory.Web.Services
