@@ -1,0 +1,162 @@
+@{
+    ViewData["Title"] = "Threads";
+}
+
+<div class="threads-page">
+    <h1>Conversation Threads</h1>
+
+    <div class="thread-controls">
+        <button id="btn-refresh" class="btn" onclick="refreshThreads()">Refresh</button>
+        <button id="btn-new" class="btn btn-primary" onclick="startNewThread()">New Thread</button>
+    </div>
+
+    <div id="thread-list" class="thread-list">
+        <p>Loading...</p>
+    </div>
+
+    <div id="thread-detail" class="thread-detail" style="display:none">
+        <div class="detail-header">
+            <h2 id="detail-title">Thread</h2>
+            <div class="detail-actions">
+                <button class="btn btn-sm" onclick="archiveThread()">Archive</button>
+                <button class="btn btn-sm" onclick="forkThread()">Fork</button>
+                <button class="btn btn-sm" onclick="closeDetail()">Close</button>
+            </div>
+        </div>
+        <div id="detail-messages" class="messages"></div>
+        <div class="input-area">
+            <textarea id="user-input" placeholder="Type a message..." rows="3"></textarea>
+            <button id="btn-send" class="btn btn-primary" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let rpcId = 100;
+    let currentThreadId = null;
+
+    async function rpcCall(method, params) {
+        const res = await fetch('/api/rpc', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: rpcId++, method, params })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        return data.result;
+    }
+
+    async function refreshThreads() {
+        try {
+            const result = await rpcCall('thread/list', {});
+            const list = document.getElementById('thread-list');
+            if (!result.threads?.length) {
+                list.innerHTML = '<p class="empty">No threads yet. Start a new conversation.</p>';
+                return;
+            }
+            list.innerHTML = result.threads.map(t => `
+                <div class="thread-card" onclick="openThread('${t.threadId}')">
+                    <div class="thread-title">${t.title || 'Untitled'}</div>
+                    <div class="thread-meta">
+                        <span class="badge ${t.status}">${t.status}</span>
+                        <span>${t.model || 'default'}</span>
+                        <span>${new Date(t.updatedAt).toLocaleString()}</span>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            document.getElementById('thread-list').innerHTML = `<p class="error">Error: ${e.message}</p>`;
+        }
+    }
+
+    async function startNewThread() {
+        const text = prompt('Enter your first message:');
+        if (!text) return;
+        try {
+            const result = await rpcCall('thread/start', {
+                input: { text },
+                path: null
+            });
+            currentThreadId = result.threadId;
+            await refreshThreads();
+            openThread(result.threadId);
+        } catch (e) {
+            alert('Error: ' + e.message);
+        }
+    }
+
+    async function openThread(threadId) {
+        currentThreadId = threadId;
+        document.getElementById('thread-detail').style.display = 'block';
+        try {
+            const result = await rpcCall('thread/resume', { threadId });
+            const thread = result.thread;
+            document.getElementById('detail-title').textContent = thread.title || `Thread ${threadId.slice(0,8)}`;
+            const msgs = document.getElementById('detail-messages');
+            msgs.innerHTML = (thread.turns || []).flatMap(t =>
+                (t.items || []).map(item => `
+                    <div class="message ${item.type}">
+                        <div class="message-type">${item.type}</div>
+                        <div class="message-text">${escapeHtml(item.text || item.command || item.filePath || '')}</div>
+                    </div>
+                `)
+            ).join('');
+            msgs.scrollTop = msgs.scrollHeight;
+        } catch (e) {
+            document.getElementById('detail-messages').innerHTML = `<p class="error">Error: ${e.message}</p>`;
+        }
+    }
+
+    async function sendMessage() {
+        if (!currentThreadId) return;
+        const input = document.getElementById('user-input');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        try {
+            await rpcCall('turn/start', { threadId: currentThreadId, input: { text } });
+        } catch (e) {
+            alert('Error: ' + e.message);
+        }
+    }
+
+    async function archiveThread() {
+        if (!currentThreadId) return;
+        if (!confirm('Archive this thread?')) return;
+        try {
+            await rpcCall('thread/archive', { threadId: currentThreadId });
+            closeDetail();
+            await refreshThreads();
+        } catch (e) {
+            alert('Error: ' + e.message);
+        }
+    }
+
+    async function forkThread() {
+        if (!currentThreadId) return;
+        try {
+            const result = await rpcCall('thread/fork', { threadId: currentThreadId });
+            alert('Forked to: ' + result.threadId);
+            await refreshThreads();
+        } catch (e) {
+            alert('Error: ' + e.message);
+        }
+    }
+
+    function closeDetail() {
+        currentThreadId = null;
+        document.getElementById('thread-detail').style.display = 'none';
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        rpcCall('initialize', { clientInfo: { name: 'codapter-web', version: '0.0.3' } })
+            .then(() => refreshThreads())
+            .catch(() => refreshThreads());
+    });
+</script>
+}

@@ -1,0 +1,117 @@
+@{
+    ViewData["Title"] = "Configuration";
+}
+
+<div class="config-page">
+    <h1>Configuration</h1>
+
+    <div class="cards">
+        <div class="card wide">
+            <h2>Current Configuration</h2>
+            <div class="card-body">
+                <div id="config-display">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Update Setting</h2>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="config-key">Key</label>
+                    <select id="config-key">
+                        <option value="model">model</option>
+                        <option value="review_model">review_model</option>
+                        <option value="sandbox_mode">sandbox_mode</option>
+                        <option value="web_search">web_search</option>
+                        <option value="reasoning_effort">reasoning_effort</option>
+                        <option value="instructions">instructions</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="config-value">Value</label>
+                    <input type="text" id="config-value" placeholder="Enter value..." />
+                </div>
+                <button class="btn btn-primary" onclick="updateConfig()">Update</button>
+                <div id="config-result" class="result-message"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Environment Variables</h2>
+            <div class="card-body">
+                <table class="env-table">
+                    <thead>
+                        <tr><th>Variable</th><th>Purpose</th><th>Default</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>CODAPTER_COLLAB</code></td><td>Enable collaboration</td><td>Disabled</td></tr>
+                        <tr><td><code>CODAPTER_PI_COMMAND</code></td><td>Pi launch command</td><td>npx</td></tr>
+                        <tr><td><code>CODAPTER_PI_IDLE_TIMEOUT_MS</code></td><td>Idle timeout</td><td>300000</td></tr>
+                        <tr><td><code>CODAPTER_DEBUG_LOG_FILE</code></td><td>Debug log path</td><td>Disabled</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let rpcId = 200;
+    let configVersion = 0;
+
+    async function rpcCall(method, params) {
+        const res = await fetch('/api/rpc', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: rpcId++, method, params })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        return data.result;
+    }
+
+    async function loadConfig() {
+        try {
+            const result = await rpcCall('config/read', {});
+            configVersion = result.version;
+            const display = document.getElementById('config-display');
+            display.innerHTML = `<pre>${JSON.stringify(result.config, null, 2)}</pre>`;
+        } catch (e) {
+            document.getElementById('config-display').innerHTML = `<p class="error">Error: ${e.message}</p>`;
+        }
+    }
+
+    async function updateConfig() {
+        const key = document.getElementById('config-key').value;
+        let value = document.getElementById('config-value').value;
+
+        // Auto-detect type
+        if (value === 'true') value = true;
+        else if (value === 'false') value = false;
+        else if (!isNaN(Number(value)) && value !== '') value = Number(value);
+
+        try {
+            const result = await rpcCall('config/value/write', {
+                version: configVersion,
+                edits: [{ key, value }]
+            });
+            configVersion = result.version;
+            document.getElementById('config-result').textContent = 'Updated successfully';
+            document.getElementById('config-result').className = 'result-message success';
+            await loadConfig();
+        } catch (e) {
+            document.getElementById('config-result').textContent = 'Error: ' + e.message;
+            document.getElementById('config-result').className = 'result-message error';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        rpcCall('initialize', { clientInfo: { name: 'codapter-web', version: '0.0.3' } })
+            .then(() => loadConfig())
+            .catch(() => loadConfig());
+    });
+</script>
+}

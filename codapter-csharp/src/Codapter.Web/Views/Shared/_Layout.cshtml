@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Codapter</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="/">Codapter</a>
+                <span class="version">v0.0.3</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">Dashboard</a></li>
+                <li><a href="/Home/Threads" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Threads" ? "active" : "")">Threads</a></li>
+                <li><a href="/Home/Config" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Config" ? "active" : "")">Config</a></li>
+                <li><a href="/healthz" target="_blank">Health</a></li>
+            </ul>
+            <div class="nav-status">
+                <span id="connection-status" class="status-indicator disconnected">Disconnected</span>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        @RenderBody()
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Codapter C# MVC &mdash; Protocol Adapter for Codex Clients</p>
+        </div>
+    </footer>
+
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

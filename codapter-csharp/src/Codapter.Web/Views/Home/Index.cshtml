@@ -1,0 +1,217 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="dashboard">
+    <h1>Codapter Dashboard</h1>
+    <p class="subtitle">Protocol adapter bridging Codex clients to alternative AI backends</p>
+
+    <div class="cards">
+        <div class="card">
+            <h2>Server Status</h2>
+            <div class="card-body">
+                <div class="status-row">
+                    <span class="label">Status:</span>
+                    <span id="server-status" class="value status-ok">Running</span>
+                </div>
+                <div class="status-row">
+                    <span class="label">Transport:</span>
+                    <span class="value">HTTP / WebSocket / SignalR</span>
+                </div>
+                <div class="status-row">
+                    <span class="label">Backend:</span>
+                    <span class="value">Pi (via @mariozechner/pi-coding-agent)</span>
+                </div>
+                <div class="status-row">
+                    <span class="label">Collaboration:</span>
+                    <span id="collab-status" class="value">Checking...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Active Threads</h2>
+            <div class="card-body">
+                <div id="thread-count" class="big-number">-</div>
+                <p>Active conversation threads</p>
+                <a href="/Home/Threads" class="btn">View Threads</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Available Models</h2>
+            <div class="card-body">
+                <div id="model-list" class="model-list">
+                    <p>Loading models...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>API Endpoints</h2>
+            <div class="card-body">
+                <table class="endpoint-table">
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Transport</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>POST /api/rpc</code></td>
+                            <td>HTTP</td>
+                            <td>JSON-RPC over HTTP</td>
+                        </tr>
+                        <tr>
+                            <td><code>POST /api/rpc/batch</code></td>
+                            <td>HTTP</td>
+                            <td>Batch JSON-RPC</td>
+                        </tr>
+                        <tr>
+                            <td><code>ws://host/ws/rpc</code></td>
+                            <td>WebSocket</td>
+                            <td>NDJSON-RPC over WebSocket</td>
+                        </tr>
+                        <tr>
+                            <td><code>/hub/rpc</code></td>
+                            <td>SignalR</td>
+                            <td>Real-time RPC via SignalR</td>
+                        </tr>
+                        <tr>
+                            <td><code>GET /healthz</code></td>
+                            <td>HTTP</td>
+                            <td>Health check</td>
+                        </tr>
+                        <tr>
+                            <td><code>GET /readyz</code></td>
+                            <td>HTTP</td>
+                            <td>Readiness check</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card wide">
+            <h2>Supported RPC Methods</h2>
+            <div class="card-body">
+                <div class="method-grid">
+                    <div class="method-group">
+                        <h3>Thread Management</h3>
+                        <ul>
+                            <li><code>thread/start</code></li>
+                            <li><code>thread/resume</code></li>
+                            <li><code>thread/fork</code></li>
+                            <li><code>thread/list</code></li>
+                            <li><code>thread/archive</code></li>
+                        </ul>
+                    </div>
+                    <div class="method-group">
+                        <h3>Turn Operations</h3>
+                        <ul>
+                            <li><code>turn/start</code></li>
+                            <li><code>turn/interrupt</code></li>
+                        </ul>
+                    </div>
+                    <div class="method-group">
+                        <h3>Models & Config</h3>
+                        <ul>
+                            <li><code>model/list</code></li>
+                            <li><code>model/current</code></li>
+                            <li><code>config/read</code></li>
+                            <li><code>config/value/write</code></li>
+                        </ul>
+                    </div>
+                    <div class="method-group">
+                        <h3>Commands</h3>
+                        <ul>
+                            <li><code>command/exec</code></li>
+                            <li><code>command/exec/stdin</code></li>
+                            <li><code>command/exec/interrupt</code></li>
+                        </ul>
+                    </div>
+                    <div class="method-group">
+                        <h3>Auth</h3>
+                        <ul>
+                            <li><code>auth/status</code></li>
+                            <li><code>auth/login</code></li>
+                            <li><code>auth/logout</code></li>
+                        </ul>
+                    </div>
+                    <div class="method-group">
+                        <h3>Stubs</h3>
+                        <ul>
+                            <li><code>collaborationMode/list</code></li>
+                            <li><code>experimentalFeature/list</code></li>
+                            <li><code>mcpServerStatus/list</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Check health
+        try {
+            const res = await fetch('/healthz');
+            const data = await res.json();
+            document.getElementById('server-status').textContent = data.status === 'ok' ? 'Running' : 'Error';
+        } catch {
+            document.getElementById('server-status').textContent = 'Unreachable';
+            document.getElementById('server-status').className = 'value status-error';
+        }
+
+        // Initialize with JSON-RPC
+        try {
+            const initRes = await rpcCall('initialize', { clientInfo: { name: 'codapter-web', version: '0.0.3' } });
+            document.getElementById('collab-status').textContent =
+                initRes.capabilities?.supportsCollaboration ? 'Enabled' : 'Disabled';
+            document.getElementById('connection-status').textContent = 'Connected';
+            document.getElementById('connection-status').className = 'status-indicator connected';
+        } catch {
+            document.getElementById('collab-status').textContent = 'Unknown';
+        }
+
+        // Get thread count
+        try {
+            const threads = await rpcCall('thread/list', {});
+            document.getElementById('thread-count').textContent = threads.threads?.length ?? 0;
+        } catch {
+            document.getElementById('thread-count').textContent = '?';
+        }
+
+        // Get models
+        try {
+            const models = await rpcCall('model/list', {});
+            const list = document.getElementById('model-list');
+            if (models.models?.length) {
+                list.innerHTML = models.models.map(m =>
+                    `<div class="model-item"><code>${m.id}</code> ${m.name ? '- ' + m.name : ''}</div>`
+                ).join('');
+            } else {
+                list.innerHTML = '<p>No models available (backend not connected)</p>';
+            }
+        } catch {
+            document.getElementById('model-list').innerHTML = '<p>Failed to load models</p>';
+        }
+    });
+
+    let rpcId = 1;
+    async function rpcCall(method, params) {
+        const res = await fetch('/api/rpc', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: rpcId++, method, params })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        return data.result;
+    }
+</script>
+}

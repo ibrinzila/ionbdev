@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Codapter.Web</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Codapter.Core\Codapter.Core.csproj" />
+    <ProjectReference Include="..\Codapter.BackendPi\Codapter.BackendPi.csproj" />
+  </ItemGroup>
+
+</Project>
