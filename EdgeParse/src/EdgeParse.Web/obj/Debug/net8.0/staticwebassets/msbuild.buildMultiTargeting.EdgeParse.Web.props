@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/EdgeParse.Web.props" />
-</Project>
