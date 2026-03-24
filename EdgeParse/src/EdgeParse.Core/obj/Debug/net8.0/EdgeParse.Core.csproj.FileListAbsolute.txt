@@ -1,0 +1,12 @@
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/obj/Debug/net8.0/EdgeParse.Core.csproj.AssemblyReference.cache
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/obj/Debug/net8.0/EdgeParse.Core.GeneratedMSBuildEditorConfig.editorconfig
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/obj/Debug/net8.0/EdgeParse.Core.AssemblyInfoInputs.cache
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/obj/Debug/net8.0/EdgeParse.Core.AssemblyInfo.cs
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/obj/Debug/net8.0/EdgeParse.Core.csproj.CoreCompileInputs.cache
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/bin/Debug/net8.0/EdgeParse.Core.deps.json
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/bin/Debug/net8.0/EdgeParse.Core.dll
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/bin/Debug/net8.0/EdgeParse.Core.pdb
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/obj/Debug/net8.0/EdgeParse.Core.dll
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/obj/Debug/net8.0/refint/EdgeParse.Core.dll
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/obj/Debug/net8.0/EdgeParse.Core.pdb
+/home/user/ionbdev/EdgeParse/src/EdgeParse.Core/obj/Debug/net8.0/ref/EdgeParse.Core.dll
