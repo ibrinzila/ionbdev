@@ -5,10 +5,11 @@ using EdgeParse.Core.Models;
 using EdgeParse.Core.Pdf;
 using EdgeParse.Core.Pipeline.Stages;
 using EdgeParse.Core.Utils;
+using System.Collections.Concurrent;
 
 /// <summary>
-/// 20-stage processing pipeline that transforms raw PDF chunks into semantic document elements.
-/// Mirrors the Rust orchestrator.rs stage sequence.
+/// 20-stage processing pipeline with per-page parallelism.
+/// Stages 0b-7b run per-page in parallel, cross-page stages run sequentially.
 /// </summary>
 public class Orchestrator
 {
@@ -19,9 +20,6 @@ public class Orchestrator
         _config = config;
     }
 
-    /// <summary>
-    /// Runs the full pipeline on extracted page chunks and returns a PdfDocument.
-    /// </summary>
     public PdfDocument Process(
         List<PageChunks> allPageChunks,
         PdfMetadata metadata,
@@ -45,13 +43,24 @@ public class Orchestrator
         // Build page info lookup
         var pageInfos = allPageChunks.ToDictionary(p => p.PageNumber, p => p.PageInfo);
 
-        // Per-page processing stages
-        var allElements = new List<ContentElement>();
+        // Per-page processing stages 3-7 in PARALLEL
+        var pageResults = new ConcurrentDictionary<int, List<ContentElement>>();
 
-        foreach (var pageChunks in allPageChunks)
+        Parallel.ForEach(allPageChunks, new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount)
+        }, pageChunks =>
         {
             var pageElements = ProcessPage(pageChunks);
-            allElements.AddRange(pageElements);
+            pageResults[pageChunks.PageNumber] = pageElements;
+        });
+
+        // Merge in page order
+        var allElements = new List<ContentElement>();
+        foreach (var pageChunks in allPageChunks)
+        {
+            if (pageResults.TryGetValue(pageChunks.PageNumber, out var elements))
+                allElements.AddRange(elements);
         }
 
         // Stage 8: Header/footer detection (cross-page)
@@ -69,15 +78,29 @@ public class Orchestrator
         // Stage 14: Caption linking
         allElements = CaptionLinker.LinkCaptions(allElements);
 
+        // Stage 14b: Footnote detection
+        allElements = FootnoteDetector.DetectFootnotes(allElements, pageInfos);
+
+        // Stage 14c: TOC detection
+        allElements = TocDetector.DetectTableOfContents(allElements);
+
         // Stage 15: Cross-page table linking
         allElements = CrossPageTableLinker.LinkCrossPageTables(allElements);
+
+        // Stage 17: Nesting level assignment
+        NestingAssigner.AssignNestingLevels(allElements);
 
         // Stage 18: Reading order sort
         if (_config.ReadingOrder == ReadingOrder.XyCut)
         {
             allElements = XyCut.Sort(allElements);
-            // Re-assign indices after sorting
             AssignIndices(allElements);
+        }
+
+        // Stage 19: Content sanitization
+        if (_config.Sanitize)
+        {
+            allElements = ContentSanitizer.Sanitize(allElements);
         }
 
         // Remove header/footer if not configured to include
@@ -182,48 +205,20 @@ public class Orchestrator
     {
         switch (elem.Type)
         {
-            case ContentElementType.TextLine:
-                elem.TextLine!.Index = index;
-                break;
-            case ContentElementType.TextBlock:
-                elem.TextBlock!.Index = index;
-                break;
-            case ContentElementType.Image:
-                elem.Image!.Index = index;
-                break;
-            case ContentElementType.LineArt:
-                elem.LineArt!.Index = index;
-                break;
-            case ContentElementType.Paragraph:
-                elem.Paragraph!.Index = index;
-                break;
-            case ContentElementType.Heading:
-                elem.Heading!.Index = index;
-                break;
-            case ContentElementType.NumberHeading:
-                elem.NumberHeading!.Index = index;
-                break;
-            case ContentElementType.Table:
-                elem.Table!.Index = index;
-                break;
-            case ContentElementType.List:
-                elem.List!.Index = index;
-                break;
-            case ContentElementType.Caption:
-                elem.Caption!.Index = index;
-                break;
-            case ContentElementType.Figure:
-                elem.Figure!.Index = index;
-                break;
-            case ContentElementType.Formula:
-                elem.Formula!.Index = index;
-                break;
-            case ContentElementType.HeaderFooter:
-                elem.HeaderFooter!.Index = index;
-                break;
-            case ContentElementType.TableBorder:
-                elem.TableBorder!.Index = index;
-                break;
+            case ContentElementType.TextLine: elem.TextLine!.Index = index; break;
+            case ContentElementType.TextBlock: elem.TextBlock!.Index = index; break;
+            case ContentElementType.Image: elem.Image!.Index = index; break;
+            case ContentElementType.LineArt: elem.LineArt!.Index = index; break;
+            case ContentElementType.Paragraph: elem.Paragraph!.Index = index; break;
+            case ContentElementType.Heading: elem.Heading!.Index = index; break;
+            case ContentElementType.NumberHeading: elem.NumberHeading!.Index = index; break;
+            case ContentElementType.Table: elem.Table!.Index = index; break;
+            case ContentElementType.List: elem.List!.Index = index; break;
+            case ContentElementType.Caption: elem.Caption!.Index = index; break;
+            case ContentElementType.Figure: elem.Figure!.Index = index; break;
+            case ContentElementType.Formula: elem.Formula!.Index = index; break;
+            case ContentElementType.HeaderFooter: elem.HeaderFooter!.Index = index; break;
+            case ContentElementType.TableBorder: elem.TableBorder!.Index = index; break;
         }
     }
 }

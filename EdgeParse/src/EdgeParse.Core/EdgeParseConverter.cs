@@ -8,20 +8,21 @@ using EdgeParse.Core.Pipeline;
 
 /// <summary>
 /// Main entry point for EdgeParse PDF conversion.
-/// Mirrors the Rust lib.rs convert/convert_bytes functions.
+/// Optimized: single PDF open for metadata+content, parallel batch processing.
 /// </summary>
 public static class EdgeParseConverter
 {
     /// <summary>
     /// Converts a PDF file to a PdfDocument.
+    /// Uses single-open extraction (metadata + pages in one pass).
     /// </summary>
     public static PdfDocument Convert(string inputPath, ProcessingConfig? config = null)
     {
         config ??= new ProcessingConfig();
         var fileName = Path.GetFileName(inputPath);
 
-        var pageChunks = PdfTextExtractor.ExtractFromFile(inputPath, config.Password);
-        var metadata = PdfTextExtractor.GetMetadata(inputPath, config.Password);
+        // Single open - extract metadata and pages together
+        var (metadata, pageChunks) = PdfTextExtractor.ExtractAll(inputPath, config.Password);
 
         var orchestrator = new Orchestrator(config);
         return orchestrator.Process(pageChunks, metadata, fileName);
@@ -29,30 +30,24 @@ public static class EdgeParseConverter
 
     /// <summary>
     /// Converts PDF bytes to a PdfDocument.
+    /// Uses single-open extraction.
     /// </summary>
     public static PdfDocument ConvertBytes(byte[] data, string fileName, ProcessingConfig? config = null)
     {
         config ??= new ProcessingConfig();
 
-        var pageChunks = PdfTextExtractor.ExtractFromBytes(data, config.Password);
-        var metadata = PdfTextExtractor.GetMetadataFromBytes(data, config.Password);
+        var (metadata, pageChunks) = PdfTextExtractor.ExtractAllFromBytes(data, config.Password);
 
         var orchestrator = new Orchestrator(config);
         return orchestrator.Process(pageChunks, metadata, fileName);
     }
 
-    /// <summary>
-    /// Converts a PDF file to a specific output format string.
-    /// </summary>
     public static string ConvertToString(string inputPath, OutputFormat format, ProcessingConfig? config = null)
     {
         var doc = Convert(inputPath, config);
         return RenderDocument(doc, format, config);
     }
 
-    /// <summary>
-    /// Converts PDF bytes to a specific output format string.
-    /// </summary>
     public static string ConvertBytesToString(byte[] data, string fileName, OutputFormat format, ProcessingConfig? config = null)
     {
         var doc = ConvertBytes(data, fileName, config);
@@ -60,20 +55,19 @@ public static class EdgeParseConverter
     }
 
     /// <summary>
-    /// Batch processes multiple PDF files.
+    /// Batch processes multiple PDF files with full parallelism.
     /// </summary>
     public static BatchResult ProcessBatch(IEnumerable<string> filePaths, ProcessingConfig? config = null)
     {
         config ??= new ProcessingConfig();
-        var result = new BatchResult();
         var paths = filePaths.ToList();
-        result.TotalFiles = paths.Count;
-
+        var results = new DocumentResult[paths.Count];
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
-        // Process in parallel
-        var results = new DocumentResult[paths.Count];
-        Parallel.For(0, paths.Count, i =>
+        Parallel.For(0, paths.Count, new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount)
+        }, i =>
         {
             var itemSw = System.Diagnostics.Stopwatch.StartNew();
             try
@@ -98,17 +92,16 @@ public static class EdgeParseConverter
         });
 
         sw.Stop();
-        result.Results = results.ToList();
-        result.SuccessCount = results.Count(r => r.Success);
-        result.FailureCount = results.Count(r => !r.Success);
-        result.TotalTimeMs = sw.Elapsed.TotalMilliseconds;
-
-        return result;
+        return new BatchResult
+        {
+            TotalFiles = paths.Count,
+            Results = results.ToList(),
+            SuccessCount = results.Count(r => r.Success),
+            FailureCount = results.Count(r => !r.Success),
+            TotalTimeMs = sw.Elapsed.TotalMilliseconds
+        };
     }
 
-    /// <summary>
-    /// Renders a PdfDocument to a string in the specified format.
-    /// </summary>
     public static string RenderDocument(PdfDocument doc, OutputFormat format, ProcessingConfig? config = null)
     {
         return format switch

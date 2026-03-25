@@ -63,6 +63,9 @@ public static class TableDetector
         if (totalCells > 0 && (double)totalCellsWithContent / totalCells < 0.1)
             return (tables, textChunks); // Less than 10% cells have content - likely not a table
 
+        // Detect cell spans (merged cells)
+        DetectCellSpans(table);
+
         tables.Add(table);
 
         // Remove assigned chunks from remaining
@@ -71,6 +74,53 @@ public static class TableDetector
             .ToList();
 
         return (tables, remaining);
+    }
+
+    /// <summary>
+    /// Detects rowspan/colspan by finding empty cells adjacent to cells with content
+    /// that spans across multiple grid positions based on ruling line gaps.
+    /// </summary>
+    private static void DetectCellSpans(TableBorder table)
+    {
+        // Detect colspan: if a horizontal line is missing between two cells,
+        // they may be a single merged cell
+        for (int r = 0; r < table.Rows.Count; r++)
+        {
+            var row = table.Rows[r];
+            for (int c = 0; c < row.Cells.Count - 1; c++)
+            {
+                var cell = row.Cells[c];
+                var nextCell = row.Cells[c + 1];
+
+                // If current cell has content and next cell is empty,
+                // and the content bbox extends into the next cell
+                if (cell.Content.Count > 0 && nextCell.Content.Count == 0)
+                {
+                    cell.ColSpan++;
+                    // Expand cell bbox to include the spanned cell
+                    cell.BBox = cell.BBox.Union(nextCell.BBox);
+                }
+            }
+        }
+
+        // Detect rowspan: if a vertical line is missing between two cells
+        for (int c = 0; c < table.NumColumns; c++)
+        {
+            for (int r = 0; r < table.Rows.Count - 1; r++)
+            {
+                if (c >= table.Rows[r].Cells.Count || c >= table.Rows[r + 1].Cells.Count)
+                    continue;
+
+                var cell = table.Rows[r].Cells[c];
+                var belowCell = table.Rows[r + 1].Cells[c];
+
+                if (cell.Content.Count > 0 && belowCell.Content.Count == 0)
+                {
+                    cell.RowSpan++;
+                    cell.BBox = cell.BBox.Union(belowCell.BBox);
+                }
+            }
+        }
     }
 
     /// <summary>
