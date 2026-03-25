@@ -4,6 +4,8 @@
 
 Inspired by [The Agency](https://github.com/msitarzewski/agency-agents) — the most starred AI repo of March 2026.
 
+Compatible with the [Agent Companies](https://agentcompanies.io) protocol — a vendor-neutral specification for portable AI company packages with `COMPANY.md`, `TEAM.md`, `AGENTS.md`, `PROJECT.md`, `TASK.md`, and `SKILL.md` manifests.
+
 ---
 
 ## What Is This?
@@ -14,6 +16,7 @@ This is a complete AI agency tailored for the **is-a.dev** free developer domain
 - Domain-specific expertise (not generic templates)
 - Concrete deliverables with code examples
 - Proven workflows and success metrics
+- **Policy-governed execution** via the control plane
 
 You don't need a bigger model. You need **better structure**.
 
@@ -218,25 +221,54 @@ The agent will respond with DNS-specific expertise, validate records against RFC
 
 ```
 agency/
-├── engineering/          # 13 agents — Frontend, Backend, DevOps, Security...
-├── design/              # 7 agents — UI, UX, Brand, Whimsy...
-├── operations/          # 4 agents — DNS, SRE, Cloudflare, Incidents...
-├── community/           # 5 agents — PRs, Discord, Docs, Social, Abuse...
-├── security/            # 3 agents — Threats, Compliance, Pen Testing...
-├── quality/             # 3 agents — QA, Accessibility, Performance...
-├── marketing/           # 4 agents — Content, SEO, Growth, DevRel...
-├── product/             # 4 agents — PM, Sprint, Feedback, Trends...
-├── support/             # 3 agents — Support, Analytics, Infrastructure...
-├── strategy/            # 3 agents — Open Source, Partnerships, Data...
-├── project-management/  # 3 agents — Coordination, Operations, Experiments...
-├── specialized/         # 6 agents — Orchestrator, DNS Migration, API, CI/CD...
-├── control-plane/       # 5 agents + policy.yml — Policy, Audit, Rollback, Risk, Circuit Breaker
-├── scripts/             # Installation and conversion scripts
-├── examples/            # Usage examples and templates
-└── README.md            # This file
+├── COMPANY.md               # Agent Companies manifest — org root
+├── engineering/              # 13 agents — Frontend, Backend, DevOps, Security...
+├── design/                  # 7 agents — UI, UX, Brand, Whimsy...
+├── operations/              # 4 agents — DNS, SRE, Cloudflare, Incidents...
+├── community/               # 5 agents — PRs, Discord, Docs, Social, Abuse...
+├── security/                # 3 agents — Threats, Compliance, Pen Testing...
+├── quality/                 # 3 agents — QA, Accessibility, Performance...
+├── marketing/               # 4 agents — Content, SEO, Growth, DevRel...
+├── product/                 # 4 agents — PM, Sprint, Feedback, Trends...
+├── support/                 # 3 agents — Support, Analytics, Infrastructure...
+├── strategy/                # 3 agents — Open Source, Partnerships, Data...
+├── project-management/      # 3 agents — Coordination, Operations, Experiments...
+├── specialized/             # 6 agents — Orchestrator, DNS Migration, API...
+├── control-plane/           # 5 agents + policy.yml — Governance layer
+├── teams/                   # TEAM.md manifests per division
+│   ├── engineering/TEAM.md
+│   ├── design/TEAM.md
+│   ├── operations/TEAM.md
+│   ├── community/TEAM.md
+│   ├── security/TEAM.md
+│   ├── quality/TEAM.md
+│   ├── marketing/TEAM.md
+│   ├── product/TEAM.md
+│   ├── support/TEAM.md
+│   ├── strategy/TEAM.md
+│   ├── project-management/TEAM.md
+│   ├── specialized/TEAM.md
+│   └── control-plane/TEAM.md
+├── skills/                  # SKILL.md reusable capabilities
+│   ├── dns-validation/SKILL.md
+│   ├── json-schema-check/SKILL.md
+│   ├── pr-review/SKILL.md
+│   ├── cloudflare-api/SKILL.md
+│   ├── git-operations/SKILL.md
+│   ├── incident-response/SKILL.md
+│   └── abuse-detection/SKILL.md
+├── projects/                # PROJECT.md planned work
+│   ├── domain-registration-v2/PROJECT.md
+│   └── dns-security-hardening/PROJECT.md
+├── tasks/                   # TASK.md portable task templates
+│   ├── user-research/TASK.md
+│   ├── form-design/TASK.md
+│   └── api-design/TASK.md
+├── scripts/                 # Installation scripts
+└── README.md                # This file
 ```
 
-**Total: 63 agents across 13 divisions (including control plane)**
+**Total: 63 agents across 13 divisions, 7 skills, 2 projects, 3 tasks**
 
 ---
 
@@ -261,13 +293,37 @@ See any existing agent file for the full template.
 
 ---
 
+## Agent Companies Protocol
+
+This agency is compatible with the [Agent Companies](https://agentcompanies.io) vendor-neutral protocol — a portable specification for describing AI company packages in markdown.
+
+### Manifest Files
+
+| File | Purpose |
+|------|---------|
+| [`COMPANY.md`](COMPANY.md) | Organization root — boundaries, defaults, governance, team/skill references |
+| `teams/*/TEAM.md` | Division definitions — agents, manager, skills used, governance rules |
+| `skills/*/SKILL.md` | Reusable capabilities — shared processes that agents reference by name |
+| `projects/*/PROJECT.md` | Planned work — goals, teams involved, starter tasks, success metrics |
+| `tasks/*/TASK.md` | Portable task templates — steps, deliverables, acceptance criteria |
+
+### Why This Matters
+
+The Agent Companies protocol adds three things our agent files alone can't provide:
+
+1. **Progressive disclosure** — Catalog metadata loads at session start, full manifests only when needed, resources only when referenced. This manages token cost.
+2. **Portability** — Any compatible runtime (Paperclip, Claude Code, Cursor, etc.) can load the org structure from a local folder or GitHub repo.
+3. **Composability** — Skills are referenced by shortname, not file path. Teams reference agents. Projects reference tasks. Everything connects without tight coupling.
+
+---
+
 ## Why This Exists
 
 The is-a.dev project manages 6,000+ domain registrations through GitHub PRs. That's a lot of DNS records, community interactions, and infrastructure to manage.
 
 These agents give AI tools the **context and structure** they need to help effectively — whether that's reviewing a domain PR, debugging DNS propagation, or planning the next feature.
 
-**Specialized. Accountable. Composable.**
+**Specialized. Accountable. Composable. Governed.**
 
 ---
 
@@ -278,3 +334,4 @@ MIT License — same as the is-a.dev project.
 ---
 
 *Inspired by [The Agency](https://github.com/msitarzewski/agency-agents) — 50K+ stars on GitHub.*
+*Compatible with the [Agent Companies](https://agentcompanies.io) protocol.*
