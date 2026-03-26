@@ -1,0 +1,76 @@
+@model SessionListViewModel
+@{
+    ViewData["Title"] = "Sessions";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Sessions @(Model.ProjectFilter != null ? $"- {Model.ProjectFilter}" : "")</h4>
+    <div class="d-flex gap-2 align-items-center">
+        <span class="text-muted small">@Model.TotalCount total</span>
+        @if (Model.ProjectFilter != null)
+        {
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Clear Filter</a>
+        }
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Session</th>
+                    <th>Project</th>
+                    <th>Started</th>
+                    <th>Duration</th>
+                    <th>Tokens</th>
+                    <th>Tools</th>
+                    <th>Cost</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var session in Model.Sessions)
+                {
+                    <tr>
+                        <td>
+                            <a asp-action="Detail" asp-route-id="@session.Id" class="text-decoration-none">
+                                <code class="small">@session.Id[..Math.Min(12, session.Id.Length)]</code>
+                            </a>
+                            @if (session.IsPinned) { <i class="bi bi-pin-fill text-warning ms-1"></i> }
+                        </td>
+                        <td>
+                            <a asp-action="Index" asp-route-projectId="@session.ProjectName" class="text-decoration-none">
+                                @session.ProjectName
+                            </a>
+                        </td>
+                        <td class="text-muted small">@session.StartedAt.ToString("g")</td>
+                        <td class="small">@session.Duration.ToString(@"mm\:ss")</td>
+                        <td class="small">@session.TotalTokens.ToString("N0")</td>
+                        <td class="small">@session.ToolCalls</td>
+                        <td class="small">$@session.EstimatedCostUsd.ToString("F4")</td>
+                        <td><a asp-action="Detail" asp-route-id="@session.Id" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.HasMore || Model.Page > 1)
+    {
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            @if (Model.Page > 1)
+            {
+                <a asp-action="Index" asp-route-projectId="@Model.ProjectFilter" asp-route-page="@(Model.Page - 1)"
+                   class="btn btn-sm btn-outline-secondary">Previous</a>
+            }
+            else { <span></span> }
+            <span class="text-muted small">Page @Model.Page</span>
+            @if (Model.HasMore)
+            {
+                <a asp-action="Index" asp-route-projectId="@Model.ProjectFilter" asp-route-page="@(Model.Page + 1)"
+                   class="btn btn-sm btn-outline-secondary">Next</a>
+            }
+            else { <span></span> }
+        </div>
+    }
+</div>

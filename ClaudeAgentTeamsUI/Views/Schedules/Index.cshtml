@@ -1,0 +1,68 @@
+@model ScheduleListViewModel
+@{
+    ViewData["Title"] = "Schedules";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Schedules</h4>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> New Schedule</a>
+</div>
+
+@if (!Model.Schedules.Any())
+{
+    <div class="text-center py-5">
+        <i class="bi bi-clock-history display-1 text-muted"></i>
+        <h5 class="mt-3 text-muted">No schedules</h5>
+        <p class="text-muted">Create a cron schedule to automate agent tasks.</p>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>Label</th><th>Team</th><th>Cron</th><th>Status</th><th>Last Run</th><th>Next Run</th><th>Failures</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var sched in Model.Schedules)
+                    {
+                        var statusClass = sched.Status switch
+                        {
+                            ScheduleStatus.Active => "success",
+                            ScheduleStatus.Paused => "warning",
+                            _ => "secondary"
+                        };
+                        <tr>
+                            <td class="fw-medium">@sched.Label</td>
+                            <td>@sched.TeamName</td>
+                            <td><code class="small">@sched.CronExpression</code></td>
+                            <td><span class="badge bg-@statusClass">@sched.Status</span></td>
+                            <td class="text-muted small">@sched.LastRunAt?.ToString("g")</td>
+                            <td class="text-muted small">@sched.NextRunAt?.ToString("g")</td>
+                            <td>@sched.ConsecutiveFailures/@sched.MaxConsecutiveFailures</td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    @if (sched.Status == ScheduleStatus.Active)
+                                    {
+                                        <form asp-action="Pause" asp-route-id="@sched.Id" method="post">
+                                            <button class="btn btn-sm btn-outline-warning" title="Pause"><i class="bi bi-pause"></i></button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Resume" asp-route-id="@sched.Id" method="post">
+                                            <button class="btn btn-sm btn-outline-success" title="Resume"><i class="bi bi-play"></i></button>
+                                        </form>
+                                    }
+                                    <form asp-action="Delete" asp-route-id="@sched.Id" method="post"
+                                          onsubmit="return confirm('Delete this schedule?')">
+                                        <button class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

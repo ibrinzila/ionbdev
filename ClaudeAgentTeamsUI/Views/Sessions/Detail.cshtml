@@ -1,0 +1,135 @@
+@model SessionDetailViewModel
+@{
+    ViewData["Title"] = $"Session {Model.Session.Id}";
+    var s = Model.Session;
+    var m = s.Metrics;
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Back to Sessions
+    </a>
+    <h4>Session <code>@s.Id</code></h4>
+    <div class="text-muted small">@s.ProjectName &middot; @s.StartedAt.ToString("f") &middot; @m.Duration.ToString(@"mm\:ss")</div>
+</div>
+
+<!-- Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Total Tokens</div>
+            <h5 class="mb-0">@m.TotalTokens.ToString("N0")</h5>
+        </div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Input</div>
+            <h5 class="mb-0">@m.InputTokens.ToString("N0")</h5>
+        </div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Output</div>
+            <h5 class="mb-0">@m.OutputTokens.ToString("N0")</h5>
+        </div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Thinking</div>
+            <h5 class="mb-0">@m.ThinkingTokens.ToString("N0")</h5>
+        </div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Tool Calls</div>
+            <h5 class="mb-0">@m.ToolCalls</h5>
+        </div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center"><div class="card-body py-2">
+            <div class="text-muted small">Est. Cost</div>
+            <h5 class="mb-0">$@m.EstimatedCostUsd.ToString("F4")</h5>
+        </div></div>
+    </div>
+</div>
+
+<!-- Token Breakdown -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Token Breakdown by Category</h6></div>
+            <div class="card-body">
+                @foreach (var cat in m.TokensByCategory)
+                {
+                    var pct = m.TotalTokens > 0 ? (int)(cat.Value * 100.0 / m.TotalTokens) : 0;
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small">
+                            <span>@cat.Key.Replace("_", " ")</span>
+                            <span>@cat.Value.ToString("N0") (@pct%)</span>
+                        </div>
+                        <div class="progress" style="height:6px;">
+                            <div class="progress-bar" style="width:@pct%"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">Waterfall Timeline</h6></div>
+            <div class="card-body" style="max-height:300px;overflow-y:auto;">
+                @foreach (var item in Model.Waterfall.Take(30))
+                {
+                    var barColor = item.Category switch
+                    {
+                        "user" => "bg-primary",
+                        "assistant" => "bg-success",
+                        "tool" => "bg-warning",
+                        _ => "bg-secondary"
+                    };
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="small text-muted" style="width:80px;flex-shrink:0;">@item.Label</span>
+                        <div class="flex-grow-1">
+                            <div class="progress" style="height:14px;">
+                                <div class="progress-bar @barColor" style="width:@(Math.Max(5, item.Tokens / Math.Max(1, Model.Waterfall.Max(w => w.Tokens)) * 100))%">
+                                    <span style="font-size:0.6rem;">@item.Tokens tk</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Conversation -->
+<div class="card">
+    <div class="card-header"><h6 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Conversation (@s.ConversationGroups.Count messages)</h6></div>
+    <div class="card-body p-0" style="max-height:500px;overflow-y:auto;">
+        @foreach (var group in s.ConversationGroups)
+        {
+            var isUser = group.Role == "user";
+            <div class="border-bottom p-3 @(isUser ? "" : "bg-dark bg-opacity-25")">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="badge bg-@(isUser ? "primary" : "success")">@group.Role</span>
+                    <span class="text-muted" style="font-size:0.7rem;">@group.Timestamp.ToString("T")</span>
+                </div>
+                <div class="small">@group.Content</div>
+                @if (group.ToolCalls.Any())
+                {
+                    <div class="mt-2">
+                        @foreach (var tc in group.ToolCalls)
+                        {
+                            <span class="badge bg-warning bg-opacity-25 text-warning me-1">
+                                <i class="bi bi-tools me-1"></i>@tc.ToolName
+                                @if (tc.Duration.HasValue) { <span class="ms-1">(@tc.Duration.Value.TotalMilliseconds.ToString("F0")ms)</span> }
+                            </span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

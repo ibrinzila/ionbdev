@@ -1,0 +1,307 @@
+@model TeamDetailViewModel
+@{
+    ViewData["Title"] = Model.Team.Name;
+    var team = Model.Team;
+    var statusClass = team.Status switch
+    {
+        TeamStatus.Running => "success",
+        TeamStatus.Launching => "warning",
+        TeamStatus.Failed => "danger",
+        _ => "secondary"
+    };
+}
+
+<!-- Team Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-1">
+            @team.Name
+            <span class="badge bg-@statusClass ms-2">@team.Status</span>
+        </h4>
+        @if (team.Description != null)
+        {
+            <p class="text-muted mb-0 small">@team.Description</p>
+        }
+    </div>
+    <div class="d-flex gap-2">
+        @if (team.Status == TeamStatus.Idle || team.Status == TeamStatus.Stopped || team.Status == TeamStatus.Failed)
+        {
+            <form asp-action="Launch" asp-route-id="@team.Id" method="post">
+                <button class="btn btn-success"><i class="bi bi-play-fill me-1"></i> Launch</button>
+            </form>
+        }
+        else if (team.Status == TeamStatus.Running)
+        {
+            <form asp-action="Stop" asp-route-id="@team.Id" method="post">
+                <button class="btn btn-danger"><i class="bi bi-stop-fill me-1"></i> Stop</button>
+            </form>
+        }
+        <a asp-controller="Messages" asp-action="Index" asp-route-teamId="@team.Id"
+           class="btn btn-outline-primary position-relative">
+            <i class="bi bi-envelope me-1"></i> Messages
+            @if (Model.UnreadMessageCount > 0)
+            {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    @Model.UnreadMessageCount
+                </span>
+            }
+        </a>
+        <a asp-controller="Review" asp-action="Index" asp-route-teamId="@team.Id"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-code-square me-1"></i> Reviews
+        </a>
+    </div>
+</div>
+
+<!-- Provisioning Banner -->
+@if (team.ProvisioningState != null && team.ProvisioningState.Status != ProvisioningStatus.Ready)
+{
+    <div class="alert alert-info mb-3">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <strong>Provisioning: @team.ProvisioningState.Status</strong>
+        </div>
+        <div class="d-flex gap-2">
+            @foreach (var step in team.ProvisioningState.Steps)
+            {
+                var stepIcon = step.Status switch
+                {
+                    "completed" => "bi-check-circle-fill text-success",
+                    "in_progress" => "bi-arrow-repeat text-primary",
+                    _ => "bi-circle text-muted"
+                };
+                <span><i class="bi @stepIcon me-1"></i>@step.Name</span>
+            }
+        </div>
+    </div>
+}
+
+<!-- Members -->
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-people me-2"></i>Members (@team.Members.Count)</h6>
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+            <i class="bi bi-plus-lg"></i>
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Tasks</th>
+                        <th>Tokens</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var member in team.Members)
+                    {
+                        var mStatusClass = member.Status switch
+                        {
+                            MemberStatus.Active => "success",
+                            MemberStatus.Idle => "secondary",
+                            MemberStatus.Terminated => "danger",
+                            _ => "warning"
+                        };
+                        <tr>
+                            <td class="fw-medium">
+                                <i class="bi bi-circle-fill text-@mStatusClass me-1" style="font-size:0.5rem;"></i>
+                                @member.Name
+                            </td>
+                            <td><span class="badge bg-dark border">@member.Role</span></td>
+                            <td><span class="badge bg-@mStatusClass">@member.Status</span></td>
+                            <td>@member.TasksCompleted</td>
+                            <td>@member.TokensUsed.ToString("N0")</td>
+                            <td>
+                                <form asp-action="RemoveMember" asp-route-id="@team.Id"
+                                      asp-route-memberId="@member.Id" method="post" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Kanban Board -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-kanban me-2"></i>Task Board</h6>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Task
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            @foreach (var column in Model.KanbanColumns)
+            {
+                var colClass = column.State switch
+                {
+                    TaskState.Pending => "secondary",
+                    TaskState.InProgress => "primary",
+                    TaskState.InReview => "warning",
+                    TaskState.Completed => "success",
+                    _ => "dark"
+                };
+                <div class="col-md-3">
+                    <div class="border rounded p-2" style="min-height:200px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">
+                                <span class="badge bg-@colClass me-1">@column.Count</span>
+                                @column.Name
+                            </h6>
+                        </div>
+                        <div class="kanban-column" data-state="@column.State" id="col-@column.State">
+                            @foreach (var task in column.Tasks)
+                            {
+                                <div class="card mb-2 kanban-card" data-task-id="@task.Id" draggable="true">
+                                    <div class="card-body p-2">
+                                        <div class="small fw-medium">@task.Title</div>
+                                        @if (task.AssigneeName != null)
+                                        {
+                                            <div class="text-muted" style="font-size:0.7rem;">
+                                                <i class="bi bi-person me-1"></i>@task.AssigneeName
+                                            </div>
+                                        }
+                                        @if (task.ReviewStatus != ReviewState.None)
+                                        {
+                                            var reviewBadge = task.ReviewStatus switch
+                                            {
+                                                ReviewState.Review => "warning",
+                                                ReviewState.NeedsFix => "danger",
+                                                ReviewState.Approved => "success",
+                                                _ => "secondary"
+                                            };
+                                            <span class="badge bg-@reviewBadge" style="font-size:0.6rem;">@task.ReviewStatus</span>
+                                        }
+                                        <div class="mt-1">
+                                            @foreach (var tag in task.Tags)
+                                            {
+                                                <span class="badge bg-dark border" style="font-size:0.6rem;">@tag</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="AddMember" asp-route-id="@team.Id" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Member</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input name="name" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select name="role" class="form-select">
+                            <option value="Lead">Lead</option>
+                            <option value="Developer" selected>Developer</option>
+                            <option value="Reviewer">Reviewer</option>
+                            <option value="Architect">Architect</option>
+                            <option value="Tester">Tester</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-controller="Tasks" asp-action="Create" method="post">
+                <input type="hidden" name="teamId" value="@team.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input name="title" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assignee</label>
+                        <select name="assigneeName" class="form-select">
+                            <option value="">Unassigned</option>
+                            @foreach (var member in team.Members)
+                            {
+                                <option value="@member.Name">@member.Name (@member.Role)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Kanban drag and drop
+    document.querySelectorAll('.kanban-card').forEach(card => {
+        card.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', card.dataset.taskId);
+            card.classList.add('opacity-50');
+        });
+        card.addEventListener('dragend', () => card.classList.remove('opacity-50'));
+    });
+
+    document.querySelectorAll('.kanban-column').forEach(col => {
+        col.addEventListener('dragover', e => {
+            e.preventDefault();
+            col.classList.add('bg-primary', 'bg-opacity-10');
+        });
+        col.addEventListener('dragleave', () => col.classList.remove('bg-primary', 'bg-opacity-10'));
+        col.addEventListener('drop', async e => {
+            e.preventDefault();
+            col.classList.remove('bg-primary', 'bg-opacity-10');
+            const taskId = e.dataTransfer.getData('text/plain');
+            const targetColumn = parseInt(col.dataset.state);
+            try {
+                await fetch('/api/TasksApi/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ taskId, targetColumn, order: 0 })
+                });
+                location.reload();
+            } catch (err) { console.error('Move failed:', err); }
+        });
+    });
+</script>
+}

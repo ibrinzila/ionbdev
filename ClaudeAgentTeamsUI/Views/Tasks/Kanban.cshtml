@@ -1,0 +1,82 @@
+@model KanbanBoardViewModel
+@{
+    ViewData["Title"] = $"Kanban - {Model.TeamName}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">@Model.TeamName - Task Board</h4>
+    <div class="d-flex gap-2">
+        <input type="text" class="form-control form-control-sm" placeholder="Search tasks..." id="kanban-search" style="width:200px;" />
+        <a asp-controller="Teams" asp-action="Detail" asp-route-id="@Model.TeamId" class="btn btn-sm btn-outline-primary">
+            Back to Team
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    @foreach (var column in Model.Columns)
+    {
+        var colClass = column.State switch
+        {
+            TaskState.Pending => "secondary",
+            TaskState.InProgress => "primary",
+            TaskState.InReview => "warning",
+            TaskState.Completed => "success",
+            _ => "dark"
+        };
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center py-2">
+                    <span class="fw-medium small"><span class="badge bg-@colClass me-1">@column.Count</span> @column.Name</span>
+                </div>
+                <div class="card-body p-2 kanban-column" data-state="@((int)column.State)"
+                     style="min-height:300px;max-height:70vh;overflow-y:auto;">
+                    @foreach (var task in column.Tasks)
+                    {
+                        <div class="card mb-2 kanban-card" data-task-id="@task.Id" draggable="true">
+                            <div class="card-body p-2">
+                                <a asp-action="Detail" asp-route-id="@task.Id" class="text-decoration-none small fw-medium d-block">
+                                    @task.Title
+                                </a>
+                                @if (task.AssigneeName != null)
+                                {
+                                    <div class="text-muted" style="font-size:0.7rem;"><i class="bi bi-person me-1"></i>@task.AssigneeName</div>
+                                }
+                                @if (task.ReviewStatus != ReviewState.None)
+                                {
+                                    var rb = task.ReviewStatus switch { ReviewState.Review => "warning", ReviewState.NeedsFix => "danger", ReviewState.Approved => "success", _ => "secondary" };
+                                    <span class="badge bg-@rb" style="font-size:0.6rem;">@task.ReviewStatus</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.kanban-card').forEach(card => {
+        card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', card.dataset.taskId); card.classList.add('opacity-50'); });
+        card.addEventListener('dragend', () => card.classList.remove('opacity-50'));
+    });
+    document.querySelectorAll('.kanban-column').forEach(col => {
+        col.addEventListener('dragover', e => { e.preventDefault(); col.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.1)'; });
+        col.addEventListener('dragleave', () => { col.style.backgroundColor = ''; });
+        col.addEventListener('drop', async e => {
+            e.preventDefault(); col.style.backgroundColor = '';
+            const taskId = e.dataTransfer.getData('text/plain');
+            const targetColumn = parseInt(col.dataset.state);
+            await fetch('/api/TasksApi/move', { method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ taskId, targetColumn, order: 0 }) });
+            location.reload();
+        });
+    });
+    document.getElementById('kanban-search').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('.kanban-card').forEach(c => { c.style.display = c.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+    });
+</script>
+}

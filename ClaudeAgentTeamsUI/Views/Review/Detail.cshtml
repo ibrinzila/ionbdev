@@ -1,0 +1,82 @@
+@model ReviewViewModel
+@{
+    ViewData["Title"] = "Review Detail";
+    var review = Model.Review;
+}
+
+<div class="mb-4">
+    <a asp-action="Index" asp-route-teamId="@review.TeamId" class="btn btn-sm btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Back to Reviews
+    </a>
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-1">Review for "@Model.TaskTitle"</h4>
+            <span class="text-muted small">Team: @Model.TeamName &middot; @review.Files.Count files changed</span>
+        </div>
+        <div class="d-flex gap-2">
+            @if (review.State == ReviewDecisionState.Pending || review.State == ReviewDecisionState.PartiallyApproved)
+            {
+                <form asp-action="ApproveAll" asp-route-id="@review.Id" method="post">
+                    <button class="btn btn-success"><i class="bi bi-check-lg me-1"></i> Approve All</button>
+                </form>
+                <form asp-action="RejectAll" asp-route-id="@review.Id" method="post">
+                    <button class="btn btn-danger"><i class="bi bi-x-lg me-1"></i> Reject All</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+@foreach (var file in review.Files)
+{
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <code>@file.FilePath</code>
+                @if (file.IsNewFile) { <span class="badge bg-success ms-2">New</span> }
+                @if (file.IsDeleted) { <span class="badge bg-danger ms-2">Deleted</span> }
+            </div>
+            <span class="small text-muted">+@file.LinesAdded / -@file.LinesRemoved</span>
+        </div>
+        <div class="card-body p-0">
+            @foreach (var hunk in file.Hunks)
+            {
+                var hunkBg = hunk.Decision switch
+                {
+                    HunkDecision.Accepted => "bg-success bg-opacity-10",
+                    HunkDecision.Rejected => "bg-danger bg-opacity-10",
+                    _ => ""
+                };
+                <div class="border-bottom p-2 @hunkBg">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">Lines @hunk.StartLine-@hunk.EndLine</span>
+                        <div>
+                            @if (hunk.Decision == HunkDecision.Pending)
+                            {
+                                <form asp-action="DecideHunk" method="post" class="d-inline">
+                                    <input type="hidden" name="reviewId" value="@review.Id" />
+                                    <input type="hidden" name="filePath" value="@file.FilePath" />
+                                    <input type="hidden" name="hunkId" value="@hunk.Id" />
+                                    <input type="hidden" name="decision" value="Accepted" />
+                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-check"></i></button>
+                                </form>
+                                <form asp-action="DecideHunk" method="post" class="d-inline">
+                                    <input type="hidden" name="reviewId" value="@review.Id" />
+                                    <input type="hidden" name="filePath" value="@file.FilePath" />
+                                    <input type="hidden" name="hunkId" value="@hunk.Id" />
+                                    <input type="hidden" name="decision" value="Rejected" />
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x"></i></button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="badge bg-@(hunk.Decision == HunkDecision.Accepted ? "success" : "danger")">@hunk.Decision</span>
+                            }
+                        </div>
+                    </div>
+                    <pre class="mb-0 small" style="white-space:pre-wrap;"><code>@hunk.Content</code></pre>
+                </div>
+            }
+        </div>
+    </div>
+}

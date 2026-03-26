@@ -1,0 +1,101 @@
+@model TeamCreateRequest
+@{
+    ViewData["Title"] = "Create Team";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-people me-2"></i>Create New Team</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label">Team Name <span class="text-danger">*</span></label>
+                        <input asp-for="Name" class="form-control" placeholder="e.g., Backend Team" required />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea asp-for="Description" class="form-control" rows="2"
+                                  placeholder="What does this team work on?"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Project Path</label>
+                        <input asp-for="ProjectPath" class="form-control" placeholder="/path/to/project" />
+                    </div>
+
+                    <hr />
+                    <h6>Team Members</h6>
+                    <div id="members-container">
+                        <div class="row g-2 mb-2 member-row">
+                            <div class="col-5">
+                                <input name="Members[0].Name" class="form-control form-control-sm" placeholder="Member name" />
+                            </div>
+                            <div class="col-4">
+                                <select name="Members[0].Role" class="form-select form-select-sm">
+                                    <option value="Lead">Lead</option>
+                                    <option value="Developer" selected>Developer</option>
+                                    <option value="Reviewer">Reviewer</option>
+                                    <option value="Architect">Architect</option>
+                                    <option value="Tester">Tester</option>
+                                </select>
+                            </div>
+                            <div class="col-3">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.member-row').remove()">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mb-3" id="add-member-btn">
+                        <i class="bi bi-plus-lg me-1"></i> Add Member
+                    </button>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Create Team
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let memberIndex = 1;
+    document.getElementById('add-member-btn').addEventListener('click', function() {
+        const container = document.getElementById('members-container');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 member-row';
+        row.innerHTML = `
+            <div class="col-5">
+                <input name="Members[${memberIndex}].Name" class="form-control form-control-sm" placeholder="Member name" />
+            </div>
+            <div class="col-4">
+                <select name="Members[${memberIndex}].Role" class="form-select form-select-sm">
+                    <option value="Lead">Lead</option>
+                    <option value="Developer" selected>Developer</option>
+                    <option value="Reviewer">Reviewer</option>
+                    <option value="Architect">Architect</option>
+                    <option value="Tester">Tester</option>
+                </select>
+            </div>
+            <div class="col-3">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.member-row').remove()">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>`;
+        container.appendChild(row);
+        memberIndex++;
+    });
+</script>
+}

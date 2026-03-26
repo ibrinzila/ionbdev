@@ -1,0 +1,89 @@
+@model List<Team>
+@{
+    ViewData["Title"] = "Teams";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Agent Teams</h4>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Create Team
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5">
+        <i class="bi bi-people display-1 text-muted"></i>
+        <h5 class="mt-3 text-muted">No teams yet</h5>
+        <p class="text-muted">Create your first agent team to start collaborating.</p>
+        <a asp-action="Create" class="btn btn-primary">Create Team</a>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var team in Model)
+        {
+            var statusClass = team.Status switch
+            {
+                TeamStatus.Running => "success",
+                TeamStatus.Launching => "warning",
+                TeamStatus.Failed => "danger",
+                _ => "secondary"
+            };
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">@team.Name</h5>
+                            <span class="badge bg-@statusClass">@team.Status</span>
+                        </div>
+                        @if (team.Description != null)
+                        {
+                            <p class="text-muted small">@team.Description</p>
+                        }
+                        <div class="d-flex gap-3 text-muted small mb-3">
+                            <span><i class="bi bi-people me-1"></i> @team.Members.Count members</span>
+                            <span><i class="bi bi-circle-fill me-1 text-@(team.Members.Any(m => m.Status == MemberStatus.Active) ? "success" : "secondary")" style="font-size:0.5rem;"></i>
+                                @team.Members.Count(m => m.Status == MemberStatus.Active) active</span>
+                        </div>
+                        <!-- Member avatars -->
+                        <div class="d-flex gap-1 mb-3">
+                            @foreach (var member in team.Members.Take(6))
+                            {
+                                var roleIcon = member.Role switch
+                                {
+                                    MemberRole.Lead => "bi-star-fill",
+                                    MemberRole.Reviewer => "bi-eye",
+                                    MemberRole.Architect => "bi-diagram-3",
+                                    MemberRole.Tester => "bi-bug",
+                                    _ => "bi-code-slash"
+                                };
+                                <span class="badge bg-dark border" title="@member.Name (@member.Role)">
+                                    <i class="bi @roleIcon me-1"></i>@member.Name
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex gap-2">
+                        <a asp-action="Detail" asp-route-id="@team.Id" class="btn btn-sm btn-outline-primary flex-grow-1">
+                            <i class="bi bi-kanban me-1"></i> Open
+                        </a>
+                        @if (team.Status == TeamStatus.Idle || team.Status == TeamStatus.Stopped)
+                        {
+                            <form asp-action="Launch" asp-route-id="@team.Id" method="post" class="d-inline">
+                                <button class="btn btn-sm btn-success"><i class="bi bi-play-fill"></i></button>
+                            </form>
+                        }
+                        else if (team.Status == TeamStatus.Running)
+                        {
+                            <form asp-action="Stop" asp-route-id="@team.Id" method="post" class="d-inline">
+                                <button class="btn btn-sm btn-danger"><i class="bi bi-stop-fill"></i></button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

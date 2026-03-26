@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Create Schedule";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Create Schedule</h5></div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">Team Name</label>
+                        <input name="teamName" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Label</label>
+                        <input name="label" class="form-control" placeholder="e.g., Nightly CI check" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cron Expression</label>
+                        <input name="cronExpression" class="form-control" placeholder="0 0 * * *" required />
+                        <div class="form-text">Standard 5-field cron syntax (min hour dom mon dow)</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,99 @@
+@model MessagesViewModel
+@{
+    ViewData["Title"] = $"Messages - {Model.TeamName}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0">Messages - @Model.TeamName</h4>
+        @if (Model.UnreadCount > 0)
+        {
+            <span class="text-muted small">@Model.UnreadCount unread</span>
+        }
+    </div>
+    <div class="d-flex gap-2">
+        <form asp-action="MarkAllRead" method="post">
+            <input type="hidden" name="teamId" value="@Model.TeamId" />
+            <button class="btn btn-sm btn-outline-secondary">Mark all read</button>
+        </form>
+        <a asp-controller="Teams" asp-action="Detail" asp-route-id="@Model.TeamId"
+           class="btn btn-sm btn-outline-primary">Back to Team</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0"><i class="bi bi-envelope me-2"></i>Team Messages</h6></div>
+            <div class="list-group list-group-flush" style="max-height:600px;overflow-y:auto;">
+                @if (!Model.Messages.Any())
+                {
+                    <div class="text-center text-muted py-4">No messages yet</div>
+                }
+                @foreach (var msg in Model.Messages)
+                {
+                    <div class="list-group-item @(!msg.IsRead ? "bg-primary bg-opacity-10" : "")">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <span class="fw-medium small">@msg.FromMember</span>
+                                <i class="bi bi-arrow-right mx-1 text-muted small"></i>
+                                <span class="small">@msg.ToMember</span>
+                                @if (msg.Source != MessageSource.Direct)
+                                {
+                                    <span class="badge bg-dark border ms-1" style="font-size:0.6rem;">@msg.Source</span>
+                                }
+                            </div>
+                            <span class="text-muted" style="font-size:0.7rem;">@msg.Timestamp.ToString("g")</span>
+                        </div>
+                        <div class="small mt-1">@msg.Content</div>
+                        @if (msg.TaskTitle != null)
+                        {
+                            <div class="mt-1"><span class="badge bg-secondary" style="font-size:0.6rem;"><i class="bi bi-list-task me-1"></i>@msg.TaskTitle</span></div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <!-- Send Message -->
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">Send Message</h6></div>
+            <div class="card-body">
+                <form asp-action="Send" method="post">
+                    <input type="hidden" name="teamId" value="@Model.TeamId" />
+                    <div class="mb-2">
+                        <input name="from" class="form-control form-control-sm" placeholder="From" required />
+                    </div>
+                    <div class="mb-2">
+                        <input name="to" class="form-control form-control-sm" placeholder="To" required />
+                    </div>
+                    <div class="mb-2">
+                        <textarea name="content" class="form-control form-control-sm" rows="3" placeholder="Message..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Send</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Cross-Team Messages -->
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Cross-Team</h6></div>
+            <div class="list-group list-group-flush">
+                @if (!Model.CrossTeamMessages.Any())
+                {
+                    <div class="text-center text-muted py-3 small">No cross-team messages</div>
+                }
+                @foreach (var msg in Model.CrossTeamMessages.Take(10))
+                {
+                    <div class="list-group-item">
+                        <div class="small">
+                            <span class="fw-medium">@msg.FromTeam</span> <i class="bi bi-arrow-right"></i> <span>@msg.ToTeam</span>
+                        </div>
+                        <div class="small text-muted">@msg.Content</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

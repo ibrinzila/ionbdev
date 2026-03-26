@@ -1,0 +1,150 @@
+@model SettingsViewModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<h4 class="mb-4">Settings</h4>
+
+<form asp-action="Save" method="post">
+    @Html.AntiForgeryToken()
+    <div class="row g-4">
+        <!-- General -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header"><h6 class="mb-0"><i class="bi bi-gear me-2"></i>General</h6></div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Theme</label>
+                        <select name="General.Theme" class="form-select">
+                            <option value="dark" selected="@(Model.Config.General.Theme == "dark")">Dark</option>
+                            <option value="light" selected="@(Model.Config.General.Theme == "light")">Light</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Language</label>
+                        <input name="General.Language" class="form-control" value="@Model.Config.General.Language" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Claude Root Path</label>
+                        <input name="General.ClaudeRootPath" class="form-control"
+                               value="@Model.Config.General.ClaudeRootPath" placeholder="~/.claude" />
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="General.TelemetryEnabled" class="form-check-input"
+                               checked="@Model.Config.General.TelemetryEnabled" value="true" />
+                        <label class="form-check-label">Enable telemetry</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header"><h6 class="mb-0"><i class="bi bi-bell me-2"></i>Notifications</h6></div>
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="Notifications.Enabled" class="form-check-input"
+                               checked="@Model.Config.Notifications.Enabled" value="true" />
+                        <label class="form-check-label">Enable notifications</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="Notifications.TeamEvents" class="form-check-input"
+                               checked="@Model.Config.Notifications.TeamEvents" value="true" />
+                        <label class="form-check-label">Team events</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="Notifications.TaskCompletions" class="form-check-input"
+                               checked="@Model.Config.Notifications.TaskCompletions" value="true" />
+                        <label class="form-check-label">Task completions</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="Notifications.Errors" class="form-check-input"
+                               checked="@Model.Config.Notifications.Errors" value="true" />
+                        <label class="form-check-label">Errors</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="Notifications.RateLimits" class="form-check-input"
+                               checked="@Model.Config.Notifications.RateLimits" value="true" />
+                        <label class="form-check-label">Rate limits</label>
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label small">Snooze Duration (minutes)</label>
+                        <input type="number" name="Notifications.SnoozeDurationMinutes" class="form-control"
+                               value="@Model.Config.Notifications.SnoozeDurationMinutes" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Display -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header"><h6 class="mb-0"><i class="bi bi-display me-2"></i>Display</h6></div>
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="Display.ShowTimestamps" class="form-check-input"
+                               checked="@Model.Config.Display.ShowTimestamps" value="true" />
+                        <label class="form-check-label">Show timestamps</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="Display.CompactMode" class="form-check-input"
+                               checked="@Model.Config.Display.CompactMode" value="true" />
+                        <label class="form-check-label">Compact mode</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="Display.SyntaxHighlighting" class="form-check-input"
+                               checked="@Model.Config.Display.SyntaxHighlighting" value="true" />
+                        <label class="form-check-label">Syntax highlighting</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HTTP Server -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header"><h6 class="mb-0"><i class="bi bi-hdd-network me-2"></i>HTTP Server</h6></div>
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="HttpServer.Enabled" class="form-check-input"
+                               checked="@Model.Config.HttpServer.Enabled" value="true" />
+                        <label class="form-check-label">Enable HTTP server</label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small">Port</label>
+                        <input type="number" name="HttpServer.Port" class="form-control"
+                               value="@Model.Config.HttpServer.Port" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i> Save Settings
+        </button>
+    </div>
+
+    <!-- System Info -->
+    <div class="card mt-4">
+        <div class="card-header"><h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>System Info</h6></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="text-muted small">CLI Version</div>
+                    <div>@Model.CliVersion</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">CLI Status</div>
+                    <div>@Model.CliStatus</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Platform</div>
+                    <div>ASP.NET MVC (.NET 8)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
