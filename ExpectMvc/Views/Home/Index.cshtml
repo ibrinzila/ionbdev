@@ -1,0 +1,65 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="hero">
+    <h1>Expect</h1>
+    <p class="subtitle">Let agents test your code in a real browser.</p>
+
+    <div class="pipeline">
+        <div class="stage">
+            <span class="stage-number">1</span>
+            <h3>Scan changes</h3>
+            <p>Reads your git diff &mdash; unstaged, branch, or all changes.</p>
+        </div>
+        <div class="stage-arrow">&rarr;</div>
+        <div class="stage">
+            <span class="stage-number">2</span>
+            <h3>Generate plan</h3>
+            <p>AI agent (Claude or Codex) creates a step-by-step test strategy.</p>
+        </div>
+        <div class="stage-arrow">&rarr;</div>
+        <div class="stage">
+            <span class="stage-number">3</span>
+            <h3>Run in browser</h3>
+            <p>Playwright executes each step with accessibility snapshots.</p>
+        </div>
+        <div class="stage-arrow">&rarr;</div>
+        <div class="stage">
+            <span class="stage-number">4</span>
+            <h3>Report</h3>
+            <p>Pass/fail results with session recordings.</p>
+        </div>
+    </div>
+
+    <a href="/Test/Run" class="btn btn-primary">Run Tests</a>
+</div>
+
+<section class="features">
+    <h2>Features</h2>
+    <ul>
+        <li>AI-powered test plan generation from code diffs</li>
+        <li>Claude and Codex agent support</li>
+        <li>Real browser execution via Playwright</li>
+        <li>Accessibility-first ref-based element targeting</li>
+        <li>Cookie injection for authenticated testing</li>
+        <li>Session video recording</li>
+        <li>REST API for CI/CD integration</li>
+    </ul>
+</section>
+
+<section class="api-docs">
+    <h2>API Usage (CI Mode)</h2>
+    <pre><code>POST /api/run
+Content-Type: application/json
+
+{
+  "repositoryPath": "/path/to/repo",
+  "url": "http://localhost:3000",
+  "message": "test the login flow",
+  "agent": "claude",
+  "target": "changes",
+  "skipReview": true
+}</code></pre>
+    <p>Returns exit-equivalent: <strong>200</strong> on pass, <strong>422</strong> on failure.</p>
+</section>

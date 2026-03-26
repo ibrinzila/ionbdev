@@ -1,0 +1,54 @@
+@model RunTestViewModel
+@{
+    ViewData["Title"] = "Run Tests";
+}
+
+<h1>Run Tests</h1>
+<p>Scan your code changes and generate a browser test plan.</p>
+
+<form asp-action="Run" method="post" class="form">
+    <div class="form-group">
+        <label asp-for="RepositoryPath">Repository Path</label>
+        <input asp-for="RepositoryPath" class="form-control" placeholder="/path/to/your/repo" required />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Url">Target URL</label>
+        <input asp-for="Url" class="form-control" placeholder="http://localhost:3000" />
+        <span class="hint">The URL to test against (required for execution).</span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Message">Instruction (optional)</label>
+        <textarea asp-for="Message" class="form-control" rows="3"
+                  placeholder="e.g. test the login flow"></textarea>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label asp-for="Agent">Agent</label>
+            <select asp-for="Agent" class="form-control">
+                <option value="claude">Claude</option>
+                <option value="codex">Codex</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Target">Target</label>
+            <select asp-for="Target" class="form-control">
+                <option value="changes">Changes (staged + unstaged)</option>
+                <option value="unstaged">Unstaged only</option>
+                <option value="branch">Branch diff</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group checkbox-group">
+        <label>
+            <input asp-for="SkipReview" type="checkbox" />
+            Skip plan review (run immediately)
+        </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Scan &amp; Plan</button>
+</form>

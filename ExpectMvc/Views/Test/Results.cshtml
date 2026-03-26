@@ -1,0 +1,56 @@
+@model ResultsViewModel
+@{
+    ViewData["Title"] = "Test Results";
+}
+
+<h1 class="@(Model.Result.Passed ? "pass" : "fail")">
+    @(Model.Result.Passed ? "PASSED" : "FAILED")
+</h1>
+
+<div class="result-summary">
+    <p><strong>Plan:</strong> @Model.Plan.Description</p>
+    <p><strong>Duration:</strong> @((Model.Result.CompletedAt - Model.Result.StartedAt).TotalSeconds.ToString("F1"))s</p>
+    <p><strong>Steps:</strong> @Model.Result.StepResults.Count(s => s.Passed) / @Model.Result.StepResults.Count passed</p>
+
+    @if (!string.IsNullOrEmpty(Model.Result.ErrorMessage))
+    {
+        <div class="error-box">
+            <strong>Error:</strong> @Model.Result.ErrorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Result.VideoPath))
+    {
+        <p><strong>Recording:</strong> <code>@Model.Result.VideoPath</code></p>
+    }
+</div>
+
+<h2>Step Results</h2>
+<table class="table">
+    <thead>
+        <tr><th>#</th><th>Action</th><th>Status</th><th>Duration</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var step in Model.Result.StepResults.OrderBy(s => s.StepOrder))
+        {
+            <tr class="@(step.Passed ? "row-pass" : "row-fail")">
+                <td>@step.StepOrder</td>
+                <td>@step.Action</td>
+                <td>@(step.Passed ? "Pass" : "Fail")</td>
+                <td>@step.Duration.TotalMilliseconds.ToString("F0")ms</td>
+                <td>
+                    @if (step.Passed)
+                    {
+                        @step.ActualResult
+                    }
+                    else
+                    {
+                        <span class="error-text">@step.ErrorMessage</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a href="/Test/Run" class="btn btn-primary">Run Another Test</a>
