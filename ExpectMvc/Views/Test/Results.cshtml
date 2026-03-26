@@ -12,6 +12,11 @@
     <p><strong>Duration:</strong> @((Model.Result.CompletedAt - Model.Result.StartedAt).TotalSeconds.ToString("F1"))s</p>
     <p><strong>Steps:</strong> @Model.Result.StepResults.Count(s => s.Passed) / @Model.Result.StepResults.Count passed</p>
 
+    @if (!string.IsNullOrEmpty(Model.SessionId))
+    {
+        <p><strong>Session:</strong> <code>@Model.SessionId</code></p>
+    }
+
     @if (!string.IsNullOrEmpty(Model.Result.ErrorMessage))
     {
         <div class="error-box">
@@ -53,4 +58,6 @@
     </tbody>
 </table>
 
-<a href="/Test/Run" class="btn btn-primary">Run Another Test</a>
+<div class="btn-row">
+    <a href="/Test/Run@(string.IsNullOrEmpty(Model.SessionId) ? "" : $"?SessionId={Model.SessionId}")" class="btn btn-primary">Run Another Test</a>
+</div>

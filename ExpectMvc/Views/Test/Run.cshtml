@@ -6,7 +6,7 @@
 <h1>Run Tests</h1>
 <p>Scan your code changes and generate a browser test plan.</p>
 
-<form asp-action="Run" method="post" class="form">
+<form id="testForm" asp-action="Run" method="post" class="form">
     <div class="form-group">
         <label asp-for="RepositoryPath">Repository Path</label>
         <input asp-for="RepositoryPath" class="form-control" placeholder="/path/to/your/repo" required />
@@ -43,6 +43,11 @@
         </div>
     </div>
 
+    <div class="form-group">
+        <label asp-for="SessionId">Session ID (optional — resume a previous session)</label>
+        <input asp-for="SessionId" class="form-control" placeholder="Leave blank for a new session" />
+    </div>
+
     <div class="form-group checkbox-group">
         <label>
             <input asp-for="SkipReview" type="checkbox" />
@@ -50,5 +55,89 @@
         </label>
     </div>
 
-    <button type="submit" class="btn btn-primary">Scan &amp; Plan</button>
+    <div class="btn-row">
+        <button type="submit" class="btn btn-primary">Scan &amp; Plan</button>
+        <button type="button" id="streamBtn" class="btn btn-secondary">Stream (live)</button>
+    </div>
 </form>
+
+<div id="streamPanel" class="stream-panel" style="display:none">
+    <h2>Agent Activity</h2>
+    <div id="streamLog" class="stream-log"></div>
+</div>
+
+@section Scripts {
+<script>
+document.getElementById('streamBtn').addEventListener('click', function() {
+    const form = document.getElementById('testForm');
+    const panel = document.getElementById('streamPanel');
+    const log = document.getElementById('streamLog');
+    panel.style.display = 'block';
+    log.innerHTML = '<div class="stream-entry text">Connecting...</div>';
+
+    const data = {
+        repositoryPath: form.querySelector('[name="RepositoryPath"]').value,
+        url: form.querySelector('[name="Url"]').value,
+        message: form.querySelector('[name="Message"]').value,
+        agent: form.querySelector('[name="Agent"]').value,
+        target: form.querySelector('[name="Target"]').value,
+        sessionId: form.querySelector('[name="SessionId"]').value || null,
+        skipReview: form.querySelector('[name="SkipReview"]').checked
+    };
+
+    fetch('/Test/Stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(response => {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        function read() {
+            reader.read().then(({ done, value }) => {
+                if (done) return;
+                buffer += decoder.decode(value, { stream: true });
+
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    try {
+                        const evt = JSON.parse(line.substring(6));
+                        const div = document.createElement('div');
+                        div.className = 'stream-entry ' + (evt.type || '').toLowerCase();
+
+                        if (evt.type === 'ToolCall') {
+                            div.innerHTML = '<span class="tag tool-call">TOOL</span> ' + escapeHtml(evt.data);
+                        } else if (evt.type === 'ToolResult') {
+                            div.innerHTML = '<span class="tag tool-result">RESULT</span> <pre>' + escapeHtml(evt.data) + '</pre>';
+                        } else if (evt.type === 'Reasoning') {
+                            div.innerHTML = '<span class="tag reasoning">THINK</span> ' + escapeHtml(evt.data.substring(0, 300));
+                        } else if (evt.type === 'PlanReady') {
+                            div.innerHTML = '<span class="tag plan-ready">PLAN</span> <pre>' + escapeHtml(evt.data) + '</pre>';
+                        } else if (evt.type === 'done' && evt.sessionId) {
+                            div.innerHTML = '<span class="tag session">SESSION</span> ' + escapeHtml(evt.sessionId);
+                            form.querySelector('[name="SessionId"]').value = evt.sessionId;
+                        } else {
+                            div.textContent = evt.data;
+                        }
+                        log.appendChild(div);
+                        log.scrollTop = log.scrollHeight;
+                    } catch(e) {}
+                }
+                read();
+            });
+        }
+        read();
+    });
+});
+
+function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+</script>
+}

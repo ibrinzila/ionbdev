@@ -10,4 +10,6 @@ public interface ITestSupervisor
 {
     Task<TestPlan> ScanAndPlanAsync(RunTestViewModel input);
     Task<TestResult> ExecutePlanAsync(TestPlan plan, string url);
+    IAsyncEnumerable<AgentStreamEvent> ScanAndPlanStreamAsync(RunTestViewModel input);
+    string? GetLastSessionId();
 }

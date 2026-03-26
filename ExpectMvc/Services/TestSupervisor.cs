@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Text.RegularExpressions;
+using System.Runtime.CompilerServices;
 using ExpectMvc.Models;
 
 namespace ExpectMvc.Services;
@@ -23,6 +23,8 @@ public class TestSupervisor : ITestSupervisor
         _logger = logger;
     }
 
+    public string? GetLastSessionId() => _agent.GetLastSessionId();
+
     public async Task<TestPlan> ScanAndPlanAsync(RunTestViewModel input)
     {
         var target = Enum.TryParse<TestTarget>(input.Target, true, out var t) ? t : TestTarget.Changes;
@@ -32,12 +34,36 @@ public class TestSupervisor : ITestSupervisor
         _logger.LogInformation("Stage 1: Scanning changes");
         var diff = await _git.ScanChangesAsync(input.RepositoryPath, target);
 
-        // Stage 2: Generate plan
-        _logger.LogInformation("Stage 2: Generating test plan");
-        var plan = await _agent.GeneratePlanAsync(diff, provider, input.Message);
+        // Stage 2: Generate plan (with tool execution loop)
+        _logger.LogInformation("Stage 2: Generating test plan (agent will explore codebase)");
+        var plan = await _agent.GeneratePlanAsync(diff, provider, input.Message, input.SessionId);
         plan.Target = target;
 
         return plan;
+    }
+
+    public async IAsyncEnumerable<AgentStreamEvent> ScanAndPlanStreamAsync(
+        RunTestViewModel input, [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var target = Enum.TryParse<TestTarget>(input.Target, true, out var t) ? t : TestTarget.Changes;
+        var provider = Enum.TryParse<AgentProvider>(input.Agent, true, out var a) ? a : AgentProvider.Claude;
+
+        // Stage 1: Scan changes
+        _logger.LogInformation("Stage 1 (stream): Scanning changes");
+        var diff = await _git.ScanChangesAsync(input.RepositoryPath, target);
+
+        yield return new AgentStreamEvent
+        {
+            Type = AgentStreamEventType.Text,
+            Data = $"Scanned {diff.Files.Count} changed file(s) on branch {diff.Branch}"
+        };
+
+        // Stage 2: Stream plan generation with tool calls
+        _logger.LogInformation("Stage 2 (stream): Streaming plan generation");
+        await foreach (var evt in _agent.GeneratePlanStreamAsync(diff, provider, input.Message, input.SessionId).WithCancellation(ct))
+        {
+            yield return evt;
+        }
     }
 
     public async Task<TestResult> ExecutePlanAsync(TestPlan plan, string url)
@@ -74,7 +100,6 @@ public class TestSupervisor : ITestSupervisor
                 {
                     if (step.Action.Equals("navigate", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Navigation step — go to a URL or wait for load
                         if (!string.IsNullOrEmpty(step.Value))
                         {
                             await session.Page.GotoAsync(step.Value);
@@ -86,14 +111,12 @@ public class TestSupervisor : ITestSupervisor
                     }
                     else if (!string.IsNullOrEmpty(step.Selector))
                     {
-                        // Resolve the AI's "role:name" selector to the current snapshot's ref IDs
                         var refId = await ResolveRefIdAsync(session, step.Selector);
                         var snapshot = await _browser.ActAsync(session, refId, step.Action, step.Value);
                         stepResult.SnapshotTree = snapshot.Tree;
                     }
                     else
                     {
-                        // Wait step with no selector
                         await session.Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle,
                             new Microsoft.Playwright.PageWaitForLoadStateOptions { Timeout = 10000 });
                         var snapshot = await _browser.SnapshotAsync(session);
@@ -142,45 +165,38 @@ public class TestSupervisor : ITestSupervisor
         return result;
     }
 
-    /// <summary>
-    /// Resolves an AI-generated "role:name" descriptor to a live snapshot ref ID.
-    /// The AI generates selectors like "button:Sign In" at plan time, but actual
-    /// ref IDs (e1, e2...) only exist at runtime. This bridges the gap.
-    /// </summary>
     private async Task<string> ResolveRefIdAsync(BrowserSession session, string selector)
     {
         var snapshot = await _browser.SnapshotAsync(session);
 
-        // Parse "role:name" format from AI
         var parts = selector.Split(':', 2);
         var targetRole = parts[0].Trim().ToLowerInvariant();
         var targetName = parts.Length > 1 ? parts[1].Trim() : "";
 
-        // Find the best matching ref by role and name
         string? bestRef = null;
         var bestScore = -1;
 
         foreach (var (refId, entry) in snapshot.Refs)
         {
-            var roleMatch = entry.Role.Equals(targetRole, StringComparison.OrdinalIgnoreCase);
-            if (!roleMatch) continue;
+            if (!entry.Role.Equals(targetRole, StringComparison.OrdinalIgnoreCase))
+                continue;
 
             var score = 0;
             if (string.IsNullOrEmpty(targetName))
             {
-                score = 1; // Role-only match
+                score = 1;
             }
             else if (entry.Name.Equals(targetName, StringComparison.OrdinalIgnoreCase))
             {
-                score = 100; // Exact name match
+                score = 100;
             }
             else if (entry.Name.Contains(targetName, StringComparison.OrdinalIgnoreCase))
             {
-                score = 50; // Partial name match
+                score = 50;
             }
             else if (targetName.Contains(entry.Name, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(entry.Name))
             {
-                score = 25; // Reverse partial match
+                score = 25;
             }
 
             if (score > bestScore)

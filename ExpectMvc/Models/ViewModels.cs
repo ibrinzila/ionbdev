@@ -8,18 +8,21 @@ public class RunTestViewModel
     public string Agent { get; set; } = "claude";
     public string Target { get; set; } = "changes";
     public bool SkipReview { get; set; }
+    public string? SessionId { get; set; }
 }
 
 public class PlanReviewViewModel
 {
     public TestPlan Plan { get; set; } = new();
     public string? Url { get; set; }
+    public string? SessionId { get; set; }
 }
 
 public class ResultsViewModel
 {
     public TestResult Result { get; set; } = new();
     public TestPlan Plan { get; set; } = new();
+    public string? SessionId { get; set; }
 }
 
 public class ErrorViewModel
