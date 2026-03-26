@@ -7,11 +7,13 @@ namespace ExpectMvc.Services;
 public class AgentService : IAgentService
 {
     private readonly IConfiguration _config;
+    private readonly IHttpClientFactory _httpFactory;
     private readonly ILogger<AgentService> _logger;
 
-    public AgentService(IConfiguration config, ILogger<AgentService> logger)
+    public AgentService(IConfiguration config, IHttpClientFactory httpFactory, ILogger<AgentService> logger)
     {
         _config = config;
+        _httpFactory = httpFactory;
         _logger = logger;
     }
 
@@ -34,15 +36,21 @@ public class AgentService : IAgentService
             Steps = steps,
             SourceDiff = diff,
             Agent = provider,
-            Target = TestTarget.Changes
+            Target = diff.Files.Count > 0 ? TestTarget.Changes : TestTarget.Changes
         };
     }
 
     private static string BuildPrompt(GitDiff diff, string? message)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("You are a QA engineer. Analyze the following code changes and generate a test plan.");
-        sb.AppendLine("Return a JSON array of test steps.");
+        sb.AppendLine("You are a QA engineer. Analyze the following code changes and generate a browser test plan.");
+        sb.AppendLine("Each step will be executed against a live page using accessibility-based element targeting.");
+        sb.AppendLine();
+        sb.AppendLine("IMPORTANT: For the 'selector' field, use DESCRIPTIVE role+name pairs that match");
+        sb.AppendLine("accessibility tree elements, like: 'button:Sign In', 'textbox:Email', 'link:Home'.");
+        sb.AppendLine("Use format 'role:name'. Use null for navigation/wait steps.");
+        sb.AppendLine();
+        sb.AppendLine("For the 'action' field, use one of: click, fill, type, check, uncheck, select, hover, focus, navigate.");
         sb.AppendLine();
 
         if (!string.IsNullOrEmpty(message))
@@ -60,14 +68,16 @@ public class AgentService : IAgentService
             sb.AppendLine($"--- {file.Path} ({file.Type}) +{file.Additions} -{file.Deletions} ---");
             if (!string.IsNullOrEmpty(file.Patch))
             {
-                sb.AppendLine(file.Patch);
+                // Limit patch size to avoid hitting token limits
+                var patch = file.Patch.Length > 3000 ? file.Patch[..3000] + "\n... (truncated)" : file.Patch;
+                sb.AppendLine(patch);
             }
             sb.AppendLine();
         }
 
         sb.AppendLine();
         sb.AppendLine("Respond with ONLY a JSON array of objects, each with:");
-        sb.AppendLine("  { \"order\": number, \"action\": string, \"selector\": string|null, \"value\": string|null, \"expected\": string }");
+        sb.AppendLine("  { \"order\": number, \"action\": string, \"selector\": \"role:name\" | null, \"value\": string | null, \"expected\": string }");
 
         return sb.ToString();
     }
@@ -79,9 +89,9 @@ public class AgentService : IAgentService
             throw new InvalidOperationException(
                 "AnthropicApiKey is not configured. Set Expect:AnthropicApiKey in appsettings.json or environment.");
 
-        using var http = new HttpClient();
+        var http = _httpFactory.CreateClient("Claude");
         http.DefaultRequestHeaders.Add("x-api-key", apiKey);
-        http.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
+        http.DefaultRequestHeaders.Add("anthropic-version", "2024-10-22");
 
         var body = new
         {
@@ -107,7 +117,7 @@ public class AgentService : IAgentService
             throw new InvalidOperationException(
                 "OpenAiApiKey is not configured. Set Expect:OpenAiApiKey in appsettings.json or environment.");
 
-        using var http = new HttpClient();
+        var http = _httpFactory.CreateClient("OpenAI");
         http.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
         var body = new
@@ -136,8 +146,15 @@ public class AgentService : IAgentService
         var text = "";
         if (root.TryGetProperty("content", out var content) && content.GetArrayLength() > 0)
         {
-            // Anthropic format
-            text = content[0].GetProperty("text").GetString() ?? "";
+            // Anthropic: find the first text block
+            foreach (var block in content.EnumerateArray())
+            {
+                if (block.TryGetProperty("type", out var type) && type.GetString() == "text")
+                {
+                    text = block.GetProperty("text").GetString() ?? "";
+                    break;
+                }
+            }
         }
         else if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
         {

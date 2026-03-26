@@ -1,11 +1,12 @@
+using System.Collections.Concurrent;
 using System.Text;
-using System.Text.Json;
+using System.Text.RegularExpressions;
 using ExpectMvc.Models;
 using Microsoft.Playwright;
 
 namespace ExpectMvc.Services;
 
-public class BrowserService : IBrowserService
+public class BrowserService : IBrowserService, IAsyncDisposable
 {
     private readonly ICookieService _cookies;
     private readonly ILogger<BrowserService> _logger;
@@ -81,48 +82,45 @@ public class BrowserService : IBrowserService
     public async Task<SnapshotResult> SnapshotAsync(BrowserSession session, SnapshotOptions? options = null)
     {
         options ??= new SnapshotOptions();
-        _logger.LogInformation("Capturing accessibility snapshot");
+        _logger.LogInformation("Capturing accessibility snapshot via AriaSnapshot");
 
-        var tree = await session.Page.Accessibility.SnapshotAsync();
+        // Use Playwright's modern AriaSnapshot API (Locator.AriaSnapshotAsync)
+        // which replaced the deprecated page.Accessibility.SnapshotAsync().
+        var ariaYaml = await session.Page.Locator("body").AriaSnapshotAsync(
+            new LocatorAriaSnapshotOptions { Timeout = options.TimeoutMs });
+
         var refs = new Dictionary<string, RefEntry>();
         var sb = new StringBuilder();
         var refCounter = 0;
 
-        void WalkTree(JsonElement node, int depth)
+        // AriaSnapshotAsync returns a YAML-like string describing the accessibility tree:
+        //   - role "name":
+        //     - childrole "childname"
+        // Parse each line to extract role + name and assign ref IDs.
+        foreach (var rawLine in ariaYaml.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
-            if (depth > options.MaxDepth) return;
+            var depth = (rawLine.Length - rawLine.TrimStart().Length) / 2;
+            if (depth > options.MaxDepth) continue;
 
-            var role = node.TryGetProperty("role", out var r) ? r.GetString() ?? "" : "";
-            var name = node.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
-            var indent = new string(' ', depth * 2);
+            var trimmed = rawLine.Trim().TrimStart('-').Trim();
+            if (string.IsNullOrEmpty(trimmed)) continue;
 
+            // Pattern: role "name" or just role
+            var match = Regex.Match(trimmed, @"^(\w+)(?:\s+""([^""]*)"")?\s*:?\s*$");
+            if (!match.Success) continue;
+
+            var role = match.Groups[1].Value;
+            var name = match.Groups[2].Success ? match.Groups[2].Value : "";
             var isInteractive = IsInteractiveRole(role);
 
-            if (!options.InteractiveOnly || isInteractive)
-            {
-                var refId = $"e{++refCounter}";
-                refs[refId] = new RefEntry { Role = role, Name = name };
+            if (options.InteractiveOnly && !isInteractive) continue;
+            if (options.Compact && string.IsNullOrEmpty(name) && !isInteractive) continue;
 
-                if (options.Compact && string.IsNullOrEmpty(name) && !isInteractive)
-                    return;
+            var refId = $"e{++refCounter}";
+            refs[refId] = new RefEntry { Role = role, Name = name };
 
-                sb.AppendLine($"{indent}[{refId}] {role} \"{name}\"");
-            }
-
-            if (node.TryGetProperty("children", out var children))
-            {
-                foreach (var child in children.EnumerateArray())
-                {
-                    WalkTree(child, depth + 1);
-                }
-            }
-        }
-
-        if (tree != null)
-        {
-            var json = JsonSerializer.Serialize(tree);
-            var doc = JsonDocument.Parse(json);
-            WalkTree(doc.RootElement, 0);
+            var indent = new string(' ', depth * 2);
+            sb.AppendLine($"{indent}[{refId}] {role} \"{name}\"");
         }
 
         return new SnapshotResult
@@ -136,7 +134,7 @@ public class BrowserService : IBrowserService
     {
         _logger.LogInformation("Acting on {RefId}: {Action}", refId, action);
 
-        // Build a locator from the accessibility role/name
+        // Take a fresh snapshot to get current ref-to-element mapping
         var snapshot = await SnapshotAsync(session);
         if (!snapshot.Refs.TryGetValue(refId, out var entry))
             throw new InvalidOperationException($"Ref '{refId}' not found in current snapshot");
@@ -177,7 +175,15 @@ public class BrowserService : IBrowserService
         }
 
         // Wait for any navigation/network activity to settle
-        await session.Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        try
+        {
+            await session.Page.WaitForLoadStateAsync(LoadState.NetworkIdle,
+                new PageWaitForLoadStateOptions { Timeout = 5000 });
+        }
+        catch (TimeoutException)
+        {
+            // NetworkIdle may not always fire; continue with snapshot anyway
+        }
 
         return await SnapshotAsync(session);
     }
@@ -185,6 +191,14 @@ public class BrowserService : IBrowserService
     public async Task CloseAsync(BrowserSession session)
     {
         await session.DisposeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _playwright?.Dispose();
+        _playwright = null;
+        await Task.CompletedTask;
+        GC.SuppressFinalize(this);
     }
 
     private static bool IsInteractiveRole(string role) =>

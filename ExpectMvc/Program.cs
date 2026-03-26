@@ -4,6 +4,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
+// HttpClientFactory avoids socket exhaustion from per-call HttpClient creation
+builder.Services.AddHttpClient("Claude");
+builder.Services.AddHttpClient("OpenAI");
+
 builder.Services.AddSingleton<IGitService, GitService>();
 builder.Services.AddSingleton<ICookieService, CookieService>();
 builder.Services.AddScoped<IAgentService, AgentService>();

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using ExpectMvc.Models;
 using ExpectMvc.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -8,9 +9,9 @@ public class TestController : Controller
 {
     private readonly ITestSupervisor _supervisor;
 
-    // In-memory store for demo; replace with a real store in production.
-    private static readonly Dictionary<string, TestPlan> Plans = new();
-    private static readonly Dictionary<string, TestResult> Results = new();
+    // Thread-safe in-memory store; replace with a real store in production.
+    private static readonly ConcurrentDictionary<string, TestPlan> Plans = new();
+    private static readonly ConcurrentDictionary<string, TestResult> Results = new();
 
     public TestController(ITestSupervisor supervisor)
     {

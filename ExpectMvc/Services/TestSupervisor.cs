@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using ExpectMvc.Models;
 
 namespace ExpectMvc.Services;
@@ -34,6 +35,7 @@ public class TestSupervisor : ITestSupervisor
         // Stage 2: Generate plan
         _logger.LogInformation("Stage 2: Generating test plan");
         var plan = await _agent.GeneratePlanAsync(diff, provider, input.Message);
+        plan.Target = target;
 
         return plan;
     }
@@ -70,15 +72,30 @@ public class TestSupervisor : ITestSupervisor
 
                 try
                 {
-                    if (!string.IsNullOrEmpty(step.Selector))
+                    if (step.Action.Equals("navigate", StringComparison.OrdinalIgnoreCase))
                     {
-                        var snapshot = await _browser.ActAsync(session, step.Selector, step.Action, step.Value);
+                        // Navigation step — go to a URL or wait for load
+                        if (!string.IsNullOrEmpty(step.Value))
+                        {
+                            await session.Page.GotoAsync(step.Value);
+                        }
+                        await session.Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle,
+                            new Microsoft.Playwright.PageWaitForLoadStateOptions { Timeout = 10000 });
+                        var snapshot = await _browser.SnapshotAsync(session);
+                        stepResult.SnapshotTree = snapshot.Tree;
+                    }
+                    else if (!string.IsNullOrEmpty(step.Selector))
+                    {
+                        // Resolve the AI's "role:name" selector to the current snapshot's ref IDs
+                        var refId = await ResolveRefIdAsync(session, step.Selector);
+                        var snapshot = await _browser.ActAsync(session, refId, step.Action, step.Value);
                         stepResult.SnapshotTree = snapshot.Tree;
                     }
                     else
                     {
-                        // Navigation or wait step
-                        await session.Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
+                        // Wait step with no selector
+                        await session.Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle,
+                            new Microsoft.Playwright.PageWaitForLoadStateOptions { Timeout = 10000 });
                         var snapshot = await _browser.SnapshotAsync(session);
                         stepResult.SnapshotTree = snapshot.Tree;
                     }
@@ -123,5 +140,64 @@ public class TestSupervisor : ITestSupervisor
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Resolves an AI-generated "role:name" descriptor to a live snapshot ref ID.
+    /// The AI generates selectors like "button:Sign In" at plan time, but actual
+    /// ref IDs (e1, e2...) only exist at runtime. This bridges the gap.
+    /// </summary>
+    private async Task<string> ResolveRefIdAsync(BrowserSession session, string selector)
+    {
+        var snapshot = await _browser.SnapshotAsync(session);
+
+        // Parse "role:name" format from AI
+        var parts = selector.Split(':', 2);
+        var targetRole = parts[0].Trim().ToLowerInvariant();
+        var targetName = parts.Length > 1 ? parts[1].Trim() : "";
+
+        // Find the best matching ref by role and name
+        string? bestRef = null;
+        var bestScore = -1;
+
+        foreach (var (refId, entry) in snapshot.Refs)
+        {
+            var roleMatch = entry.Role.Equals(targetRole, StringComparison.OrdinalIgnoreCase);
+            if (!roleMatch) continue;
+
+            var score = 0;
+            if (string.IsNullOrEmpty(targetName))
+            {
+                score = 1; // Role-only match
+            }
+            else if (entry.Name.Equals(targetName, StringComparison.OrdinalIgnoreCase))
+            {
+                score = 100; // Exact name match
+            }
+            else if (entry.Name.Contains(targetName, StringComparison.OrdinalIgnoreCase))
+            {
+                score = 50; // Partial name match
+            }
+            else if (targetName.Contains(entry.Name, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(entry.Name))
+            {
+                score = 25; // Reverse partial match
+            }
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestRef = refId;
+            }
+        }
+
+        if (bestRef == null)
+            throw new InvalidOperationException(
+                $"Could not resolve selector '{selector}' to any element in the current page. " +
+                $"Available refs: {string.Join(", ", snapshot.Refs.Select(r => $"{r.Key}={r.Value.Role}:\"{r.Value.Name}\""))}");
+
+        _logger.LogInformation("Resolved '{Selector}' to ref {RefId} ({Role} \"{Name}\")",
+            selector, bestRef, snapshot.Refs[bestRef].Role, snapshot.Refs[bestRef].Name);
+
+        return bestRef;
     }
 }

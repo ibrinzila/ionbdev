@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using ExpectMvc.Models;
 
 namespace ExpectMvc.Services;
@@ -26,8 +27,38 @@ public class GitService : IGitService
 
         var rawDiff = await RunGitAsync(repoPath, diffArgs);
         var branch = (await RunGitAsync(repoPath, "rev-parse --abbrev-ref HEAD")).Trim();
-        var files = ParseDiffStat(await RunGitAsync(repoPath, $"{diffArgs} --stat"));
-        var patches = await GetFilePatchesAsync(repoPath, diffArgs, files);
+
+        // Use --numstat for accurate addition/deletion counts
+        var numstat = await RunGitAsync(repoPath, $"{diffArgs} --numstat");
+        var files = ParseNumstat(numstat);
+
+        // Also pick up untracked files for the Changes target
+        if (target == TestTarget.Changes)
+        {
+            var untrackedOutput = await RunGitAsync(repoPath, "ls-files --others --exclude-standard");
+            foreach (var line in untrackedOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var path = line.Trim();
+                if (!string.IsNullOrEmpty(path) && files.All(f => f.Path != path))
+                {
+                    files.Add(new FileChange
+                    {
+                        Path = path,
+                        Type = ChangeType.Added,
+                        Additions = 0,
+                        Deletions = 0,
+                        Patch = $"(untracked new file: {path})"
+                    });
+                }
+            }
+        }
+
+        // Use --diff-filter to detect file status (A/M/D/R)
+        var nameStatus = await RunGitAsync(repoPath, $"{diffArgs} --name-status");
+        ApplyFileStatuses(files, nameStatus);
+
+        // Assign patches from the raw diff
+        AssignPatches(files, rawDiff);
 
         return new GitDiff
         {
@@ -35,38 +66,28 @@ public class GitService : IGitService
             Branch = branch,
             BaseBranch = baseBranch,
             RawDiff = rawDiff,
-            Files = patches
+            Files = files
         };
     }
 
-    private static List<FileChange> ParseDiffStat(string stat)
+    private static List<FileChange> ParseNumstat(string numstat)
     {
         var files = new List<FileChange>();
-        foreach (var line in stat.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        foreach (var line in numstat.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
-            var trimmed = line.Trim();
-            if (trimmed.StartsWith("---") || trimmed.StartsWith("+++") ||
-                !trimmed.Contains('|'))
-                continue;
+            // Format: "additions\tdeletions\tfilepath"
+            // Binary files show as: "-\t-\tfilepath"
+            var parts = line.Split('\t');
+            if (parts.Length < 3) continue;
 
-            var parts = trimmed.Split('|');
-            if (parts.Length < 2) continue;
-
-            var path = parts[0].Trim();
-            var changePart = parts[1].Trim();
-
-            var additions = changePart.Count(c => c == '+');
-            var deletions = changePart.Count(c => c == '-');
-
-            var type = changePart.Contains("new") ? ChangeType.Added
-                : changePart.Contains("delete") ? ChangeType.Deleted
-                : changePart.Contains("rename") ? ChangeType.Renamed
-                : ChangeType.Modified;
+            var path = parts[2].Trim();
+            int.TryParse(parts[0], out var additions);
+            int.TryParse(parts[1], out var deletions);
 
             files.Add(new FileChange
             {
                 Path = path,
-                Type = type,
+                Type = ChangeType.Modified, // will be updated by --name-status
                 Additions = additions,
                 Deletions = deletions
             });
@@ -74,14 +95,39 @@ public class GitService : IGitService
         return files;
     }
 
-    private static async Task<List<FileChange>> GetFilePatchesAsync(
-        string repoPath, string diffArgs, List<FileChange> files)
+    private static void ApplyFileStatuses(List<FileChange> files, string nameStatus)
     {
-        if (files.Count == 0) return files;
+        foreach (var line in nameStatus.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = line.Split('\t', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2) continue;
 
-        var rawDiff = await RunGitAsync(repoPath, diffArgs);
+            var statusCode = parts[0].Trim();
+            var path = parts.Length >= 3 ? parts[2].Trim() : parts[1].Trim(); // Renames have old\tnew
+
+            var matchingFile = files.FirstOrDefault(f => f.Path == path);
+            if (matchingFile == null && parts.Length >= 3)
+            {
+                // Try matching on old path for renames
+                matchingFile = files.FirstOrDefault(f => f.Path == parts[1].Trim());
+            }
+            if (matchingFile == null) continue;
+
+            matchingFile.Type = statusCode[0] switch
+            {
+                'A' => ChangeType.Added,
+                'D' => ChangeType.Deleted,
+                'R' => ChangeType.Renamed,
+                _ => ChangeType.Modified
+            };
+        }
+    }
+
+    private static void AssignPatches(List<FileChange> files, string rawDiff)
+    {
+        if (string.IsNullOrEmpty(rawDiff)) return;
+
         var patches = rawDiff.Split("diff --git ", StringSplitOptions.RemoveEmptyEntries);
-
         foreach (var patch in patches)
         {
             var firstLine = patch.Split('\n').FirstOrDefault() ?? "";
@@ -91,8 +137,6 @@ public class GitService : IGitService
                 matchingFile.Patch = "diff --git " + patch;
             }
         }
-
-        return files;
     }
 
     private static async Task<string> RunGitAsync(string workingDir, string arguments)
@@ -112,8 +156,19 @@ public class GitService : IGitService
         };
 
         process.Start();
-        var output = await process.StandardOutput.ReadToEndAsync();
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
+
+        var output = await outputTask;
+        var error = await errorTask;
+
+        if (process.ExitCode != 0 && !string.IsNullOrWhiteSpace(error))
+        {
+            throw new InvalidOperationException(
+                $"git {arguments} failed (exit {process.ExitCode}): {error}");
+        }
+
         return output;
     }
 }
