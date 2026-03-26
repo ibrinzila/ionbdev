@@ -72,11 +72,23 @@ public class SubprocessBackend : ISpawnBackend
     {
         lock (_lock)
         {
-            // Clean up exited processes
+            // Clean up exited processes, disposing handles
             _running.RemoveAll(entry =>
             {
-                try { return entry.Process.HasExited; }
-                catch { return true; }
+                try
+                {
+                    if (entry.Process.HasExited)
+                    {
+                        entry.Process.Dispose();
+                        return true;
+                    }
+                    return false;
+                }
+                catch
+                {
+                    try { entry.Process.Dispose(); } catch { }
+                    return true;
+                }
             });
 
             return _running.Select(entry => entry.Agent).ToList();

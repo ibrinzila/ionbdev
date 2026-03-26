@@ -1,0 +1,65 @@
+@model List<ClawTeam.Web.Models.WorkspaceInfo>
+@{
+    var teamName = (string)ViewBag.TeamName;
+    ViewData["Title"] = $"Workspaces - {teamName}";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Workspaces &mdash; @teamName</h1>
+        <span class="subtitle">@Model.Count workspace(s)</span>
+    </div>
+    <a href="/Team/Details/@teamName" class="btn btn-secondary">Back to Team</a>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <h2>No workspaces</h2>
+        <p>Workspaces are created automatically when agents are spawned with workspace isolation.</p>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Agent</th>
+                <th>Branch</th>
+                <th>Path</th>
+                <th>Base Branch</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ws in Model)
+            {
+                <tr>
+                    <td><strong>@ws.AgentName</strong></td>
+                    <td><code>@ws.BranchName</code></td>
+                    <td class="card-meta">@ws.WorktreePath</td>
+                    <td>@ws.BaseBranch</td>
+                    <td class="card-meta">@ws.CreatedAt</td>
+                    <td>
+                        <form asp-controller="Workspace" asp-action="Checkpoint" asp-route-id="@teamName" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="agentName" value="@ws.AgentName" />
+                            <button type="submit" class="btn btn-sm btn-primary">Checkpoint</button>
+                        </form>
+                        <form asp-controller="Workspace" asp-action="Merge" asp-route-id="@teamName" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="agentName" value="@ws.AgentName" />
+                            <button type="submit" class="btn btn-sm btn-success">Merge</button>
+                        </form>
+                        <form asp-controller="Workspace" asp-action="Cleanup" asp-route-id="@teamName" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="agentName" value="@ws.AgentName" />
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Clean up workspace?')">Cleanup</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -33,33 +33,33 @@ public class CostEvent
 /// <summary>Aggregated cost summary for a team.</summary>
 public class CostSummary
 {
-    [JsonPropertyName("totalCostCents")]
+    [JsonPropertyName("total_cost_cents")]
     public double TotalCostCents { get; set; }
 
-    [JsonPropertyName("totalInputTokens")]
+    [JsonPropertyName("total_input_tokens")]
     public long TotalInputTokens { get; set; }
 
-    [JsonPropertyName("totalOutputTokens")]
+    [JsonPropertyName("total_output_tokens")]
     public long TotalOutputTokens { get; set; }
 
-    [JsonPropertyName("eventCount")]
+    [JsonPropertyName("event_count")]
     public int EventCount { get; set; }
 
-    [JsonPropertyName("byAgent")]
+    [JsonPropertyName("by_agent")]
     public Dictionary<string, AgentCostSummary> ByAgent { get; set; } = new();
 }
 
 public class AgentCostSummary
 {
-    [JsonPropertyName("costCents")]
+    [JsonPropertyName("cost_cents")]
     public double CostCents { get; set; }
 
-    [JsonPropertyName("inputTokens")]
+    [JsonPropertyName("input_tokens")]
     public long InputTokens { get; set; }
 
-    [JsonPropertyName("outputTokens")]
+    [JsonPropertyName("output_tokens")]
     public long OutputTokens { get; set; }
 
-    [JsonPropertyName("eventCount")]
+    [JsonPropertyName("event_count")]
     public int EventCount { get; set; }
 }

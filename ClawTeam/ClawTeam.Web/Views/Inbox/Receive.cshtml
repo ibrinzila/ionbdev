@@ -1,0 +1,30 @@
+@model List<ClawTeam.Web.Models.TeamMessage>
+@{
+    var teamName = (string)ViewBag.TeamName;
+    var agentName = (string)ViewBag.AgentName;
+    ViewData["Title"] = $"Inbox - {agentName}";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Inbox &mdash; @agentName</h1>
+        <span class="subtitle">@Model.Count message(s) received from @teamName</span>
+    </div>
+    <a href="/Inbox/Index/@teamName" class="btn btn-secondary">All Messages</a>
+</div>
+
+<div class="message-list">
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state"><p>No messages in inbox.</p></div>
+    }
+    @foreach (var msg in Model)
+    {
+        <div class="message-item">
+            <span class="message-from">@msg.From</span>
+            <span class="message-content">@msg.Content</span>
+            <span class="message-type">@msg.Type</span>
+            <span class="message-time">@msg.Timestamp</span>
+        </div>
+    }
+</div>

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using ClawTeam.Web.Models;
 
@@ -11,7 +12,10 @@ public class TaskStore
 {
     private readonly string _teamName;
     private readonly string _dataDir;
-    private readonly object _fileLock = new();
+
+    // Static locks keyed by team name for cross-instance thread safety
+    private static readonly ConcurrentDictionary<string, object> TeamLocks = new();
+    private object FileLock => TeamLocks.GetOrAdd(_teamName, _ => new object());
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -85,10 +89,10 @@ public class TaskStore
             task.Status = "blocked";
         }
 
-        // Update reverse links: add this task to the "blocks" list of deps
-        foreach (var depId in task.BlockedBy)
+        lock (FileLock)
         {
-            lock (_fileLock)
+            // Update reverse links: add this task to the "blocks" list of deps
+            foreach (var depId in task.BlockedBy)
             {
                 var dep = LoadTask(depId);
                 if (dep != null && !dep.Blocks.Contains(task.Id))
@@ -97,9 +101,9 @@ public class TaskStore
                     SaveTask(dep);
                 }
             }
-        }
 
-        SaveTask(task);
+            SaveTask(task);
+        }
         return task;
     }
 
@@ -108,7 +112,7 @@ public class TaskStore
     public TaskItem Update(string taskId, string? status = null, string? owner = null,
         string? priority = null, string? lockedBy = null)
     {
-        lock (_fileLock)
+        lock (FileLock)
         {
             var task = LoadTask(taskId)
                 ?? throw new InvalidOperationException($"Task '{taskId}' not found");

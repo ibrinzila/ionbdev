@@ -180,6 +180,106 @@ public class ApiController : ControllerBase
         return Ok(new { status = "ok", requestId });
     }
 
+    // ── Cost ──────────────────────────────────────────────────────────
+
+    [HttpPost("team/{teamName}/cost")]
+    public IActionResult ReportCost(string teamName, [FromBody] Models.CostEvent evt)
+    {
+        var store = new CostStore(_dataDir, teamName);
+        store.Report(evt);
+        return Ok(new { status = "ok" });
+    }
+
+    [HttpGet("team/{teamName}/cost")]
+    public IActionResult GetCostSummary(string teamName)
+    {
+        var store = new CostStore(_dataDir, teamName);
+        return Ok(store.Summary());
+    }
+
+    // ── Plans ─────────────────────────────────────────────────────────
+
+    [HttpPost("team/{teamName}/plan")]
+    public IActionResult SubmitPlan(string teamName, [FromBody] Models.SubmitPlanForm form)
+    {
+        var manager = new PlanManager(_dataDir, teamName, _teamManager);
+        var planId = manager.SubmitPlan(form.AgentName, form.PlanContent, form.Summary);
+        return Ok(new { status = "ok", planId });
+    }
+
+    [HttpPost("team/{teamName}/plan/{planId}/approve")]
+    public IActionResult ApprovePlan(string teamName, string planId, [FromBody] Dictionary<string, string> body)
+    {
+        var from = body.GetValueOrDefault("from", "");
+        var target = body.GetValueOrDefault("target", "");
+        var feedback = body.GetValueOrDefault("feedback");
+        var manager = new PlanManager(_dataDir, teamName, _teamManager);
+        manager.ApprovePlan(from, planId, target, feedback);
+        return Ok(new { status = "ok" });
+    }
+
+    [HttpPost("team/{teamName}/plan/{planId}/reject")]
+    public IActionResult RejectPlan(string teamName, string planId, [FromBody] Dictionary<string, string> body)
+    {
+        var from = body.GetValueOrDefault("from", "");
+        var target = body.GetValueOrDefault("target", "");
+        var feedback = body.GetValueOrDefault("feedback");
+        var manager = new PlanManager(_dataDir, teamName, _teamManager);
+        manager.RejectPlan(from, planId, target, feedback);
+        return Ok(new { status = "ok" });
+    }
+
+    [HttpGet("team/{teamName}/plan/{planId}")]
+    public IActionResult GetPlan(string teamName, string planId, [FromQuery] string agent = "")
+    {
+        var manager = new PlanManager(_dataDir, teamName, _teamManager);
+        var content = manager.GetPlan(agent, planId);
+        if (content == null) return NotFound();
+        return Ok(new { content });
+    }
+
+    // ── Workspace ────────────────────────────────────────────────────
+
+    [HttpGet("team/{teamName}/workspaces")]
+    public IActionResult ListWorkspaces(string teamName)
+    {
+        var manager = new WorkspaceManager(_dataDir, teamName);
+        return Ok(manager.ListWorkspaces());
+    }
+
+    [HttpPost("team/{teamName}/workspace/{agentName}/checkpoint")]
+    public IActionResult CheckpointWorkspace(string teamName, string agentName)
+    {
+        var manager = new WorkspaceManager(_dataDir, teamName);
+        var success = manager.Checkpoint(agentName);
+        return success ? Ok(new { status = "ok" }) : BadRequest(new { error = "Checkpoint failed" });
+    }
+
+    [HttpPost("team/{teamName}/workspace/{agentName}/merge")]
+    public IActionResult MergeWorkspace(string teamName, string agentName)
+    {
+        var manager = new WorkspaceManager(_dataDir, teamName);
+        var success = manager.Merge(agentName);
+        return success ? Ok(new { status = "ok" }) : BadRequest(new { error = "Merge failed" });
+    }
+
+    [HttpDelete("team/{teamName}/workspace/{agentName}")]
+    public IActionResult CleanupWorkspace(string teamName, string agentName)
+    {
+        var manager = new WorkspaceManager(_dataDir, teamName);
+        manager.CleanupWorkspace(agentName);
+        return Ok(new { status = "ok" });
+    }
+
+    // ── Member removal ───────────────────────────────────────────────
+
+    [HttpDelete("team/{teamName}/member/{memberName}")]
+    public IActionResult RemoveMember(string teamName, string memberName)
+    {
+        _teamManager.RemoveMember(teamName, memberName);
+        return Ok(new { status = "ok" });
+    }
+
     // ── Events (SSE) ─────────────────────────────────────────────────
 
     [HttpGet("events/{teamName}")]

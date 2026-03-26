@@ -1,0 +1,47 @@
+@model List<(string AgentName, string PlanId, string Filename)>
+@{
+    var teamName = (string)ViewBag.TeamName;
+    ViewData["Title"] = $"Plans - {teamName}";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Plans &mdash; @teamName</h1>
+        <span class="subtitle">@Model.Count plan(s)</span>
+    </div>
+    <a href="/Team/Details/@teamName" class="btn btn-secondary">Back to Team</a>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <h2>No plans submitted</h2>
+        <p>Agents can submit plans for leader approval.</p>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Agent</th>
+                <th>Plan ID</th>
+                <th>File</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var (agentName, planId, filename) in Model)
+            {
+                <tr>
+                    <td><strong>@agentName</strong></td>
+                    <td><code>@planId</code></td>
+                    <td>@filename</td>
+                    <td>
+                        <a href="/Plan/View/@teamName?agent=@agentName&planId=@planId" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

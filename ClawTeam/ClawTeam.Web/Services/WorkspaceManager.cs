@@ -180,12 +180,15 @@ public class WorkspaceManager
 
         using var proc = Process.Start(psi)
             ?? throw new InvalidOperationException("Failed to start git");
-        var output = proc.StandardOutput.ReadToEnd();
+        // Read both streams to avoid deadlock when buffers fill
+        var outputTask = proc.StandardOutput.ReadToEndAsync();
+        var errorTask = proc.StandardError.ReadToEndAsync();
         proc.WaitForExit(30_000);
+        var output = outputTask.GetAwaiter().GetResult();
 
         if (proc.ExitCode != 0)
         {
-            var err = proc.StandardError.ReadToEnd();
+            var err = errorTask.GetAwaiter().GetResult();
             throw new InvalidOperationException($"git {args} failed: {err}");
         }
 

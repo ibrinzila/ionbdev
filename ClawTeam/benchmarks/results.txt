@@ -4,33 +4,33 @@ BENCHMARK RESULTS: ClawTeam Python v0.2.0 vs C# ASP.NET MVC Port
 
 Test                                            Python       C#     Py(ms)     C#(ms)
 ------------------------------------------------------------------------------------------
-Team: Create team                                 PASS     PASS      277.4       69.3
-Team: Discover/list teams                         PASS     PASS      268.4       18.4
-Team: Get team details                            PASS     PASS      275.9       34.3
-Team: Add member                                  PASS     PASS      291.0       13.5
-Team: List members                                PASS     PASS      281.5        8.2
-Task: Create task                                 PASS     PASS      318.4       17.7
-Task: List tasks                                  PASS     PASS      281.4       10.2
-Task: Update task status                          PASS     PASS      255.1       13.0
-Task: Create with dependencies                    PASS     PASS      264.1        4.4
-Inbox: Send message                               PASS     PASS      272.1       15.6
-Inbox: Broadcast message                          PASS     PASS      265.6        6.0
-Inbox: Check inbox count                          PASS     PASS      252.1        8.8
-Inbox: Receive (consume) message                  PASS     PASS      268.7        9.5
-Lifecycle: Mark agent idle                        PASS     PASS      282.6       14.3
-Lifecycle: Request shutdown                       PASS     PASS      341.9       10.1
-Board: API overview endpoint                      PASS     PASS        N/A        2.5
-Board: API team detail endpoint                   PASS     PASS        N/A        3.6
+Team: Create team                                 PASS     PASS      398.6       76.0
+Team: Discover/list teams                         PASS     PASS      404.5       17.1
+Team: Get team details                            PASS     PASS      268.9       43.2
+Team: Add member                                  PASS     PASS      395.2       18.1
+Team: List members                                PASS     PASS      317.8        8.4
+Task: Create task                                 PASS     PASS      391.2       16.4
+Task: List tasks                                  PASS     PASS      312.5       11.2
+Task: Update task status                          PASS     PASS      272.2       11.1
+Task: Create with dependencies                    PASS     PASS      278.3        4.2
+Inbox: Send message                               PASS     PASS      265.9       14.7
+Inbox: Broadcast message                          PASS     PASS      311.7        6.6
+Inbox: Check inbox count                          PASS     PASS      290.0       11.8
+Inbox: Receive (consume) message                  PASS     PASS      261.4        9.4
+Lifecycle: Mark agent idle                        PASS     PASS      274.3       11.8
+Lifecycle: Request shutdown                       PASS     PASS      282.4        9.6
+Board: API overview endpoint                      PASS     PASS        N/A        2.7
+Board: API team detail endpoint                   PASS     PASS        N/A        3.1
 Board: SSE events endpoint                        PASS     PASS        N/A        N/A
-MVC: Home page                                    PASS     PASS        N/A        9.1
-MVC: Team list page                               PASS     PASS        N/A       10.8
-MVC: Board page                                   PASS     PASS        N/A        8.1
-MVC: Team detail page                             PASS     PASS        N/A       66.4
-MVC: Board team page                              PASS     PASS        N/A       11.6
-MVC: Create team form                             PASS     PASS        N/A       32.9
-Performance: Create 50 tasks                      PASS     PASS    14945.9      132.9
-Performance: Send 50 messages                     PASS     PASS    14679.3      103.1
-Team: Delete/cleanup team                         PASS     PASS      328.3       11.3
+MVC: Home page                                    PASS     PASS        N/A        8.3
+MVC: Team list page                               PASS     PASS        N/A        9.7
+MVC: Board page                                   PASS     PASS        N/A        7.2
+MVC: Team detail page                             PASS     PASS        N/A       88.9
+MVC: Board team page                              PASS     PASS        N/A       11.9
+MVC: Create team form                             PASS     PASS        N/A       36.8
+Performance: Create 50 tasks                      PASS     PASS    13954.8      105.0
+Performance: Send 50 messages                     PASS     PASS    14949.2      113.9
+Team: Delete/cleanup team                         PASS     PASS      324.7        9.5
 ------------------------------------------------------------------------------------------
 TOTALS                                        27/   27 27/   27
 

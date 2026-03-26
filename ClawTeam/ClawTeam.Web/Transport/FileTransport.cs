@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace ClawTeam.Web.Transport;
@@ -11,7 +12,9 @@ public class FileTransport : ITransport
 {
     private readonly string _dataDir;
     private readonly string _teamName;
-    private readonly object _lock = new();
+
+    // Static locks keyed by inbox path for cross-instance thread safety
+    private static readonly ConcurrentDictionary<string, object> InboxLocks = new();
 
     public FileTransport(string dataDir, string teamName)
     {
@@ -52,7 +55,8 @@ public class FileTransport : ITransport
         var dir = InboxDir(agentName);
         var results = new List<byte[]>();
 
-        lock (_lock)
+        var lockKey = Path.Combine(_dataDir, _teamName, agentName);
+        lock (InboxLocks.GetOrAdd(lockKey, _ => new object()))
         {
             var files = Directory.GetFiles(dir, "msg-*.json")
                 .OrderBy(f => f)

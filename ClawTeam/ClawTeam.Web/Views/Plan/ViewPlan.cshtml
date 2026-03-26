@@ -1,0 +1,35 @@
+@{
+    var teamName = (string)ViewBag.TeamName;
+    var agentName = (string)ViewBag.AgentName;
+    var planId = (string)ViewBag.PlanId;
+    var planContent = (string)ViewBag.PlanContent;
+    ViewData["Title"] = $"Plan {planId} - {teamName}";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Plan @planId</h1>
+        <span class="subtitle">By @agentName &middot; Team @teamName</span>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+        <form asp-controller="Plan" asp-action="Approve" asp-route-id="@teamName" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="fromAgent" value="leader" />
+            <input type="hidden" name="planId" value="@planId" />
+            <input type="hidden" name="targetAgent" value="@agentName" />
+            <button type="submit" class="btn btn-success">Approve</button>
+        </form>
+        <form asp-controller="Plan" asp-action="Reject" asp-route-id="@teamName" method="post" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="fromAgent" value="leader" />
+            <input type="hidden" name="planId" value="@planId" />
+            <input type="hidden" name="targetAgent" value="@agentName" />
+            <button type="submit" class="btn btn-danger">Reject</button>
+        </form>
+        <a href="/Plan/Index/@teamName" class="btn btn-secondary">Back</a>
+    </div>
+</div>
+
+<div class="card">
+    <pre style="white-space:pre-wrap;font-size:0.9rem;line-height:1.6;color:var(--text);">@planContent</pre>
+</div>
