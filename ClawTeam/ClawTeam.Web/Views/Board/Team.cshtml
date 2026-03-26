@@ -1,0 +1,58 @@
+@model TeamDetailViewModel
+@{
+    ViewData["Title"] = $"Board - {Model.Team.Name}";
+}
+
+<div class="page-header">
+    <div>
+        <h1>@Model.Team.Name — Live Board</h1>
+        <span class="subtitle">@Model.Team.Description &middot; Auto-refreshes every 2 seconds</span>
+    </div>
+    <a href="/Team/Details/@Model.Team.Name" class="btn btn-secondary">Full Details</a>
+</div>
+
+<div id="board-content">
+    @* Task Summary *@
+    <div class="card-stats" style="padding:0.5rem 0 1rem;">
+        <div class="stat"><span class="stat-value" id="stat-total">@Model.TaskSummary.Total</span><span class="stat-label">Total</span></div>
+        <div class="stat"><span class="stat-value" style="color:var(--yellow)" id="stat-pending">@Model.TaskSummary.Pending</span><span class="stat-label">Pending</span></div>
+        <div class="stat"><span class="stat-value" style="color:var(--accent)" id="stat-progress">@Model.TaskSummary.InProgress</span><span class="stat-label">In Progress</span></div>
+        <div class="stat"><span class="stat-value" style="color:var(--green)" id="stat-completed">@Model.TaskSummary.Completed</span><span class="stat-label">Completed</span></div>
+        <div class="stat"><span class="stat-value" style="color:var(--red)" id="stat-blocked">@Model.TaskSummary.Blocked</span><span class="stat-label">Blocked</span></div>
+    </div>
+
+    @* Kanban *@
+    <div class="kanban" id="kanban-board">
+        <div class="kanban-column col-pending" id="col-pending">
+            <div class="kanban-column-header">Pending <span class="count" id="count-pending">@Model.Tasks.GetValueOrDefault("pending", new()).Count</span></div>
+            <div id="tasks-pending"></div>
+        </div>
+        <div class="kanban-column col-progress" id="col-progress">
+            <div class="kanban-column-header">In Progress <span class="count" id="count-progress">@Model.Tasks.GetValueOrDefault("in_progress", new()).Count</span></div>
+            <div id="tasks-progress"></div>
+        </div>
+        <div class="kanban-column col-completed" id="col-completed">
+            <div class="kanban-column-header">Completed <span class="count" id="count-completed">@Model.Tasks.GetValueOrDefault("completed", new()).Count</span></div>
+            <div id="tasks-completed"></div>
+        </div>
+        <div class="kanban-column col-blocked" id="col-blocked">
+            <div class="kanban-column-header">Blocked <span class="count" id="count-blocked">@Model.Tasks.GetValueOrDefault("blocked", new()).Count</span></div>
+            <div id="tasks-blocked"></div>
+        </div>
+    </div>
+
+    @* Members *@
+    <div class="section-header"><span>Members</span></div>
+    <div class="member-list" id="members-list"></div>
+
+    @* Messages *@
+    <div class="section-header"><span>Recent Messages</span></div>
+    <div class="message-list" id="messages-list"></div>
+</div>
+
+@section Scripts {
+<script src="~/js/board.js"></script>
+<script>
+    initBoard('@Model.Team.Name');
+</script>
+}

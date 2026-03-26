@@ -1,0 +1,49 @@
+@model List<TeamOverviewViewModel>
+@{
+    ViewData["Title"] = "Teams";
+}
+
+<div class="page-header">
+    <h1>Teams</h1>
+    <a href="/Team/Create" class="btn btn-success">+ New Team</a>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <h2>No teams found</h2>
+        <p>Create a team to begin coordinating agents.</p>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Description</th>
+                <th>Leader</th>
+                <th>Members</th>
+                <th>Tasks</th>
+                <th>Messages</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var team in Model)
+            {
+                <tr>
+                    <td><a href="/Team/Details/@team.Name">@team.Name</a></td>
+                    <td class="card-meta">@team.Description</td>
+                    <td>@team.Leader</td>
+                    <td>@team.MemberCount</td>
+                    <td>@team.TaskCount</td>
+                    <td>@team.PendingMessages</td>
+                    <td>
+                        <a href="/Board/Team/@team.Name" class="btn btn-sm btn-secondary">Board</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

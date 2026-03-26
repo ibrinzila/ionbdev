@@ -1,0 +1,33 @@
+@model List<TeamOverviewViewModel>
+@{
+    ViewData["Title"] = "Board";
+}
+
+<div class="page-header">
+    <h1>Board Overview</h1>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <h2>No teams</h2>
+        <p>Create a team to see the board.</p>
+    </div>
+}
+else
+{
+    <div class="card-grid">
+        @foreach (var team in Model)
+        {
+            <a href="/Board/Team/@team.Name" class="card" style="text-decoration:none;color:inherit;">
+                <div class="card-title">@team.Name</div>
+                <div class="card-meta">@team.Description</div>
+                <div class="card-stats">
+                    <div class="stat"><span class="stat-value">@team.MemberCount</span><span class="stat-label">Agents</span></div>
+                    <div class="stat"><span class="stat-value">@team.TaskCount</span><span class="stat-label">Tasks</span></div>
+                    <div class="stat"><span class="stat-value">@team.PendingMessages</span><span class="stat-label">Inbox</span></div>
+                </div>
+            </a>
+        }
+    </div>
+}

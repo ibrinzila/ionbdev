@@ -1,0 +1,60 @@
+@model List<TeamMessage>
+@{
+    var teamName = (string)ViewBag.TeamName;
+    ViewData["Title"] = $"Messages - {teamName}";
+}
+
+<div class="page-header">
+    <div>
+        <h1>Messages &mdash; @teamName</h1>
+        <span class="subtitle">@Model.Count event(s) in log</span>
+    </div>
+    <a href="/Team/Details/@teamName" class="btn btn-secondary">Back to Team</a>
+</div>
+
+@* Send Message Form *@
+<div class="card" style="margin-bottom:1.5rem;">
+    <h3 style="font-size:1rem;margin-bottom:0.75rem;">Send Message</h3>
+    <form asp-controller="Inbox" asp-action="Send" asp-route-id="@teamName" method="post">
+        @Html.AntiForgeryToken()
+        <div style="display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:0.5rem;align-items:end;">
+            <div class="form-group" style="margin:0;">
+                <label>From</label>
+                <input type="text" name="From" class="form-control" placeholder="agent name" required />
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label>To (blank = broadcast)</label>
+                <input type="text" name="To" class="form-control" placeholder="recipient or empty" />
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label>Content</label>
+                <input type="text" name="Content" class="form-control" placeholder="Message..." required />
+            </div>
+            <input type="hidden" name="Type" value="chat" />
+            <button type="submit" class="btn btn-primary">Send</button>
+        </div>
+    </form>
+</div>
+
+@* Message Log *@
+<div class="message-list">
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state"><p>No messages in the event log.</p></div>
+    }
+    @foreach (var msg in Model)
+    {
+        <div class="message-item">
+            <span class="message-from">@msg.From</span>
+            <span class="message-content">
+                @msg.Content
+                @if (!string.IsNullOrEmpty(msg.To))
+                {
+                    <span class="card-meta">&rarr; @msg.To</span>
+                }
+            </span>
+            <span class="message-type">@msg.Type</span>
+            <span class="message-time">@msg.Timestamp</span>
+        </div>
+    }
+</div>

@@ -1,0 +1,94 @@
+@model List<TaskItem>
+@{
+    ViewData["Title"] = $"Tasks - {ViewBag.TeamName}";
+    var teamName = (string)ViewBag.TeamName;
+}
+
+<div class="page-header">
+    <div>
+        <h1>Tasks &mdash; @teamName</h1>
+        <span class="subtitle">@Model.Count task(s)</span>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+        <a href="/Task/Create/@teamName" class="btn btn-success">+ New Task</a>
+        <a href="/Team/Details/@teamName" class="btn btn-secondary">Back to Team</a>
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <h2>No tasks</h2>
+        <p>Create a task to assign work to agents.</p>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Owner</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var task in Model)
+            {
+                <tr>
+                    <td><code>@task.Id</code></td>
+                    <td>
+                        <strong>@task.Subject</strong>
+                        @if (!string.IsNullOrEmpty(task.Description))
+                        {
+                            <br /><span class="card-meta">@task.Description</span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var statusColor = task.Status switch
+                            {
+                                "pending" => "var(--yellow)",
+                                "in_progress" => "var(--accent)",
+                                "completed" => "var(--green)",
+                                "blocked" => "var(--red)",
+                                _ => "var(--text-muted)"
+                            };
+                        }
+                        <span style="color:@statusColor;font-weight:600;">@task.Status</span>
+                    </td>
+                    <td><span class="task-priority priority-@task.Priority">@task.Priority</span></td>
+                    <td>@(task.Owner ?? "—")</td>
+                    <td>
+                        @if (task.Status != "completed")
+                        {
+                            <form asp-controller="Task" asp-action="Update" asp-route-id="@teamName" method="post" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="taskId" value="@task.Id" />
+                                @if (task.Status == "pending" || task.Status == "blocked")
+                                {
+                                    <input type="hidden" name="Status" value="in_progress" />
+                                    <button type="submit" class="btn btn-sm btn-primary">Start</button>
+                                }
+                                else
+                                {
+                                    <input type="hidden" name="Status" value="completed" />
+                                    <button type="submit" class="btn btn-sm btn-success">Complete</button>
+                                }
+                            </form>
+                        }
+                        <form asp-controller="Task" asp-action="Delete" asp-route-id="@teamName" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="taskId" value="@task.Id" />
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('Delete task?')">Del</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

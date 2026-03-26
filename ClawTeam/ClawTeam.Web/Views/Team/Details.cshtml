@@ -1,0 +1,186 @@
+@model TeamDetailViewModel
+@{
+    ViewData["Title"] = Model.Team.Name;
+}
+
+<div class="page-header">
+    <div>
+        <h1>@Model.Team.Name</h1>
+        <span class="subtitle">@Model.Team.Description &middot; Leader: @Model.LeaderName</span>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+        <a href="/Board/Team/@Model.Team.Name" class="btn btn-primary">Live Board</a>
+        <a href="/Task/Index/@Model.Team.Name" class="btn btn-secondary">Tasks</a>
+        <a href="/Inbox/Index/@Model.Team.Name" class="btn btn-secondary">Messages</a>
+        <a href="/Spawn/Create/@Model.Team.Name" class="btn btn-success">+ Spawn Agent</a>
+    </div>
+</div>
+
+@* ── Cost Summary ── *@
+@if (Model.Cost != null && Model.Cost.EventCount > 0)
+{
+    <div class="cost-summary" style="margin-bottom:1rem;">
+        <div class="cost-item">
+            <div class="cost-value">$@((Model.Cost.TotalCostCents / 100.0).ToString("F2"))</div>
+            <div class="cost-label">Total Cost</div>
+        </div>
+        <div class="cost-item">
+            <div class="cost-value">@Model.Cost.TotalInputTokens.ToString("N0")</div>
+            <div class="cost-label">Input Tokens</div>
+        </div>
+        <div class="cost-item">
+            <div class="cost-value">@Model.Cost.TotalOutputTokens.ToString("N0")</div>
+            <div class="cost-label">Output Tokens</div>
+        </div>
+        <div class="cost-item">
+            <div class="cost-value">@Model.Cost.EventCount</div>
+            <div class="cost-label">API Calls</div>
+        </div>
+    </div>
+}
+
+@* ── Task Summary ── *@
+<div class="section-header">
+    <span>Task Summary</span>
+    <a href="/Task/Create/@Model.Team.Name" class="btn btn-sm btn-success">+ Add Task</a>
+</div>
+<div class="card-stats" style="padding:0.5rem 0 1rem;">
+    <div class="stat"><span class="stat-value">@Model.TaskSummary.Total</span><span class="stat-label">Total</span></div>
+    <div class="stat"><span class="stat-value" style="color:var(--yellow)">@Model.TaskSummary.Pending</span><span class="stat-label">Pending</span></div>
+    <div class="stat"><span class="stat-value" style="color:var(--accent)">@Model.TaskSummary.InProgress</span><span class="stat-label">In Progress</span></div>
+    <div class="stat"><span class="stat-value" style="color:var(--green)">@Model.TaskSummary.Completed</span><span class="stat-label">Completed</span></div>
+    <div class="stat"><span class="stat-value" style="color:var(--red)">@Model.TaskSummary.Blocked</span><span class="stat-label">Blocked</span></div>
+</div>
+
+@* ── Kanban ── *@
+<div class="kanban">
+    <div class="kanban-column col-pending">
+        <div class="kanban-column-header">Pending <span class="count">@Model.Tasks.GetValueOrDefault("pending", new()).Count</span></div>
+        @foreach (var t in Model.Tasks.GetValueOrDefault("pending", new()))
+        {
+            <div class="task-card">
+                <div class="task-card-subject">@t.Subject</div>
+                <div class="task-card-meta">
+                    <span class="task-priority priority-@t.Priority">@t.Priority</span>
+                    @if (!string.IsNullOrEmpty(t.Owner)) { <span>&middot; @t.Owner</span> }
+                </div>
+            </div>
+        }
+    </div>
+    <div class="kanban-column col-progress">
+        <div class="kanban-column-header">In Progress <span class="count">@Model.Tasks.GetValueOrDefault("in_progress", new()).Count</span></div>
+        @foreach (var t in Model.Tasks.GetValueOrDefault("in_progress", new()))
+        {
+            <div class="task-card">
+                <div class="task-card-subject">@t.Subject</div>
+                <div class="task-card-meta">
+                    <span class="task-priority priority-@t.Priority">@t.Priority</span>
+                    @if (!string.IsNullOrEmpty(t.Owner)) { <span>&middot; @t.Owner</span> }
+                </div>
+            </div>
+        }
+    </div>
+    <div class="kanban-column col-completed">
+        <div class="kanban-column-header">Completed <span class="count">@Model.Tasks.GetValueOrDefault("completed", new()).Count</span></div>
+        @foreach (var t in Model.Tasks.GetValueOrDefault("completed", new()))
+        {
+            <div class="task-card">
+                <div class="task-card-subject">@t.Subject</div>
+                <div class="task-card-meta">
+                    <span class="task-priority priority-@t.Priority">@t.Priority</span>
+                    @if (!string.IsNullOrEmpty(t.Owner)) { <span>&middot; @t.Owner</span> }
+                </div>
+            </div>
+        }
+    </div>
+    <div class="kanban-column col-blocked">
+        <div class="kanban-column-header">Blocked <span class="count">@Model.Tasks.GetValueOrDefault("blocked", new()).Count</span></div>
+        @foreach (var t in Model.Tasks.GetValueOrDefault("blocked", new()))
+        {
+            <div class="task-card">
+                <div class="task-card-subject">@t.Subject</div>
+                <div class="task-card-meta">
+                    <span class="task-priority priority-@t.Priority">@t.Priority</span>
+                    @if (!string.IsNullOrEmpty(t.Owner)) { <span>&middot; @t.Owner</span> }
+                    @if (t.BlockedBy.Count > 0) { <span>&middot; blocked by: @string.Join(", ", t.BlockedBy)</span> }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@* ── Members ── *@
+<div class="section-header">
+    <span>Members (@Model.Members.Count)</span>
+</div>
+<div class="member-list">
+    @foreach (var m in Model.Members)
+    {
+        <div class="member-badge">
+            <div class="member-avatar">@m.Name[0..1].ToUpper()</div>
+            <div>
+                <div class="member-name">
+                    @m.Name
+                    @if (m.AgentId == Model.Team.LeadAgentId) { <span style="color:var(--yellow)">(leader)</span> }
+                </div>
+                <div class="member-type">@m.AgentType</div>
+            </div>
+            @if (m.InboxCount > 0)
+            {
+                <span class="inbox-badge">@m.InboxCount</span>
+            }
+        </div>
+    }
+</div>
+
+@* ── Add Member Form ── *@
+<div style="margin-top:1rem;">
+    <form asp-controller="Team" asp-action="AddMember" asp-route-id="@Model.Team.Name" method="post" style="display:flex;gap:0.5rem;align-items:end;">
+        @Html.AntiForgeryToken()
+        <div class="form-group" style="margin:0;flex:1;">
+            <input type="text" name="memberName" class="form-control" placeholder="Agent name" required />
+        </div>
+        <div class="form-group" style="margin:0;">
+            <select name="agentType" class="form-control">
+                <option value="claude">Claude</option>
+                <option value="codex">Codex</option>
+                <option value="gemini">Gemini</option>
+                <option value="kimi">Kimi</option>
+                <option value="nanobot">Nanobot</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Add Member</button>
+    </form>
+</div>
+
+@* ── Recent Messages ── *@
+<div class="section-header">
+    <span>Recent Messages</span>
+    <a href="/Inbox/Index/@Model.Team.Name" class="btn btn-sm btn-secondary">View All</a>
+</div>
+<div class="message-list">
+    @if (Model.Messages.Count == 0)
+    {
+        <div class="empty-state" style="padding:1rem;">
+            <p>No messages yet.</p>
+        </div>
+    }
+    @foreach (var msg in Model.Messages.TakeLast(20))
+    {
+        <div class="message-item">
+            <span class="message-from">@msg.From</span>
+            <span class="message-content">@msg.Content</span>
+            <span class="message-type">@msg.Type</span>
+            <span class="message-time">@msg.Timestamp</span>
+        </div>
+    }
+</div>
+
+@* ── Danger Zone ── *@
+<div class="section-header" style="color:var(--red);border-color:var(--red);">Danger Zone</div>
+<form asp-controller="Team" asp-action="Delete" asp-route-id="@Model.Team.Name" method="post"
+      onsubmit="return confirm('Delete team @Model.Team.Name? This cannot be undone.')">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-danger btn-sm">Delete Team</button>
+</form>

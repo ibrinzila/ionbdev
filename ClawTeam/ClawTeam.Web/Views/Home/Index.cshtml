@@ -1,0 +1,56 @@
+@model List<TeamOverviewViewModel>
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="page-header">
+    <div>
+        <h1>ClawTeam Dashboard</h1>
+        <span class="subtitle">Agent Swarm Intelligence &mdash; @Model.Count team(s)</span>
+    </div>
+    <a href="/Team/Create" class="btn btn-success">+ New Team</a>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <h2>No teams yet</h2>
+        <p>Create your first team to get started with multi-agent coordination.</p>
+        <a href="/Team/Create" class="btn btn-primary">Create Team</a>
+    </div>
+}
+else
+{
+    <div class="card-grid">
+        @foreach (var team in Model)
+        {
+            <a href="/Team/Details/@team.Name" class="card" style="text-decoration:none;color:inherit;">
+                <div class="card-title">@team.Name</div>
+                <div class="card-meta">
+                    @if (!string.IsNullOrEmpty(team.Description))
+                    {
+                        @team.Description
+                    }
+                    @if (!string.IsNullOrEmpty(team.Leader))
+                    {
+                        <span> &middot; Leader: @team.Leader</span>
+                    }
+                </div>
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">@team.MemberCount</span>
+                        <span class="stat-label">Members</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">@team.TaskCount</span>
+                        <span class="stat-label">Tasks</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">@team.PendingMessages</span>
+                        <span class="stat-label">Messages</span>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+}
