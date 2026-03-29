@@ -1,0 +1,170 @@
+@page "/"
+@using ClaudeBetter.Models
+@using ClaudeBetter.Services
+@inject ClaudeApiService ApiService
+@inject ChatSessionService Session
+@rendermode InteractiveServer
+
+<PageTitle>claude-better-csharp</PageTitle>
+
+<div class="chat-container">
+    <div class="chat-messages" @ref="_messagesDiv">
+        @if (Session.Messages.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">&#9670;</div>
+                <h2>claude-better-csharp</h2>
+                <p>A compatibility-first reimplementation. Same interface, materially less overhead.</p>
+                <div class="quick-actions">
+                    <button class="quick-btn" @onclick='() => SendQuickMessage("Explain what makes .NET AOT compilation fast")'>
+                        AOT Performance
+                    </button>
+                    <button class="quick-btn" @onclick='() => SendQuickMessage("Write a C# benchmark comparing Span<T> vs Array copy")'>
+                        Span&lt;T&gt; Benchmark
+                    </button>
+                    <button class="quick-btn" @onclick='() => SendQuickMessage("Show me a zero-allocation streaming pipeline in C#")'>
+                        Zero-alloc Streaming
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            @foreach (var message in Session.Messages)
+            {
+                <div class="message @(message.Role == "user" ? "message-user" : "message-assistant")">
+                    <div class="message-header">
+                        <span class="message-role">@(message.Role == "user" ? "You" : "Claude")</span>
+                        <span class="message-time">@message.Timestamp.ToString("HH:mm:ss")</span>
+                    </div>
+                    <div class="message-content">
+                        @if (message.IsStreaming && string.IsNullOrEmpty(message.Content))
+                        {
+                            <span class="typing-indicator">
+                                <span></span><span></span><span></span>
+                            </span>
+                        }
+                        else
+                        {
+                            <pre class="message-text">@message.Content</pre>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="chat-input-area">
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="error-banner">
+                @_error
+                <button class="error-dismiss" @onclick="() => _error = null">X</button>
+            </div>
+        }
+        <div class="input-row">
+            <textarea @bind="_userInput"
+                      @bind:event="oninput"
+                      @onkeydown="HandleKeyDown"
+                      placeholder="Message Claude..."
+                      rows="1"
+                      disabled="@_isLoading"
+                      class="chat-input" />
+            <button @onclick="SendMessage"
+                    disabled="@(_isLoading || string.IsNullOrWhiteSpace(_userInput))"
+                    class="send-btn">
+                @if (_isLoading)
+                {
+                    <span class="spinner"></span>
+                }
+                else
+                {
+                    <span>&#9654;</span>
+                }
+            </button>
+        </div>
+        <div class="input-footer">
+            <span class="model-label">claude-sonnet-4-20250514</span>
+            <button class="clear-btn" @onclick="ClearChat" disabled="@(_isLoading || Session.Messages.Count == 0)">Clear</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _userInput = "";
+    private bool _isLoading;
+    private string? _error;
+    private ElementReference _messagesDiv;
+    private CancellationTokenSource? _cts;
+
+    private async Task SendQuickMessage(string message)
+    {
+        _userInput = message;
+        await SendMessage();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(_userInput) || _isLoading)
+            return;
+
+        var input = _userInput.Trim();
+        _userInput = "";
+        _error = null;
+        _isLoading = true;
+
+        Session.AddUserMessage(input);
+        var assistantMsg = Session.AddAssistantPlaceholder();
+
+        StateHasChanged();
+
+        _cts = new CancellationTokenSource();
+
+        try
+        {
+            await foreach (var token in ApiService.StreamChatAsync(Session.Messages, Session.SystemPrompt, _cts.Token))
+            {
+                assistantMsg.Content += token;
+                StateHasChanged();
+                await Task.Delay(10); // throttle UI updates
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            assistantMsg.Content += "\n\n[Cancelled]";
+        }
+        catch (HttpRequestException ex)
+        {
+            _error = $"API error: {ex.Message}";
+            Session.Messages.Remove(assistantMsg);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error: {ex.Message}";
+            Session.Messages.Remove(assistantMsg);
+        }
+        finally
+        {
+            assistantMsg.IsStreaming = false;
+            _isLoading = false;
+            _cts?.Dispose();
+            _cts = null;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearChat()
+    {
+        _cts?.Cancel();
+        Session.Clear();
+        _error = null;
+    }
+}
