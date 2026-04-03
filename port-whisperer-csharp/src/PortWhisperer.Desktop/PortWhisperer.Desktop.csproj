@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PortWhisperer.Desktop</RootNamespace>
+    <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
+    <!-- macOS bundle settings -->
+    <CFBundleName>Port Whisperer</CFBundleName>
+    <CFBundleIdentifier>com.portwhisperer.desktop</CFBundleIdentifier>
+    <RuntimeIdentifiers>osx-x64;osx-arm64;linux-x64;win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="11.2.3" />
+    <PackageReference Include="ReactiveUI" Version="20.1.63" />
+    <ProjectReference Include="..\PortWhisperer.Core\PortWhisperer.Core.csproj" />
+  </ItemGroup>
+
+</Project>

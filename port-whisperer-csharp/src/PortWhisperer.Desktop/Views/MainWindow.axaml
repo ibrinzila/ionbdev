@@ -1,0 +1,79 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PortWhisperer.Desktop.ViewModels"
+        x:Class="PortWhisperer.Desktop.Views.MainWindow"
+        Title="Port Whisperer"
+        Width="800" Height="500"
+        MinWidth="600" MinHeight="350"
+        Background="#1a1a2e"
+        WindowStartupLocation="CenterScreen">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#16213e" Padding="16,12" CornerRadius="0,0,8,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="🔊" FontSize="22" VerticalAlignment="Center" />
+                    <StackPanel>
+                        <TextBlock Text="Port Whisperer" FontSize="18" FontWeight="Bold" Foreground="White" />
+                        <TextBlock Text="listening to your ports..." FontSize="11" Foreground="#6b7280" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button Content="🔄 Refresh" Command="{Binding RefreshCommand}"
+                            Background="#0f3460" Foreground="White" Padding="12,6"
+                            CornerRadius="6" FontSize="12" />
+                    <Button Content="{Binding ShowAll, Converter={x:Static vm:Converters.ShowAllText}}"
+                            Command="{Binding ToggleAllCommand}"
+                            Background="#0f3460" Foreground="White" Padding="12,6"
+                            CornerRadius="6" FontSize="12" />
+                    <Button Content="{Binding IsWatching, Converter={x:Static vm:Converters.WatchText}}"
+                            Command="{Binding ToggleWatchCommand}"
+                            Background="#0f3460" Foreground="White" Padding="12,6"
+                            CornerRadius="6" FontSize="12" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Port Table -->
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Ports}"
+                  IsReadOnly="True"
+                  AutoGenerateColumns="False"
+                  Background="Transparent"
+                  Foreground="White"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  BorderThickness="0"
+                  Margin="8,8,8,0"
+                  RowBackground="Transparent"
+                  AlternatingRowBackground="#1f2937"
+                  FontSize="13">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="PORT" Binding="{Binding Port, StringFormat=:{0}}"
+                                    Width="80" FontWeight="Bold" Foreground="White" />
+                <DataGridTextColumn Header="PROCESS" Binding="{Binding ProcessName}" Width="120" />
+                <DataGridTextColumn Header="PID" Binding="{Binding Pid}" Width="70" Foreground="#9ca3af" />
+                <DataGridTextColumn Header="PROJECT" Binding="{Binding ProjectName}" Width="*" Foreground="#60a5fa" />
+                <DataGridTextColumn Header="FRAMEWORK" Binding="{Binding Framework}" Width="110" />
+                <DataGridTextColumn Header="UPTIME" Binding="{Binding Uptime}" Width="90" Foreground="#fbbf24" />
+                <DataGridTextColumn Header="STATUS" Binding="{Binding StatusDisplay}" Width="100" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="#16213e" Padding="16,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding StatusText}" Foreground="#9ca3af" FontSize="12"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="Port Whisperer for .NET"
+                           Foreground="#4b5563" FontSize="11" VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
