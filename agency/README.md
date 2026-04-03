@@ -1,6 +1,6 @@
 # The Agency — is-a.dev AI Agent Org Structure
 
-> An open-source AI agency for the [is-a.dev](https://is-a.dev) project. 63 specialized agents across 13 divisions — including a **control plane** for policy enforcement, risk classification, and rollback safety. Each agent has a unique voice, expertise, and defined deliverables.
+> An open-source AI agency for the [is-a.dev](https://is-a.dev) project. **69 agents across 14 divisions** — including a control plane for governance, and an autonomous **world model** that monitors, decides, and acts without human prompts. A live picture of what is happening inside the project and what needs to happen next.
 
 Inspired by [The Agency](https://github.com/msitarzewski/agency-agents) — the most starred AI repo of March 2026.
 
@@ -167,6 +167,22 @@ You don't need a bigger model. You need **better structure**.
 
 > **Why a control plane?** Without it, you can't answer: *Who approved this action? What policy allowed it? What rollback path existed?* No answer = No production readiness. [Learn more](control-plane/README.md)
 
+### World Model (6 agents)
+*A live picture of what is happening and what needs to happen next. [Full documentation](world-model/README.md)*
+
+> These agents are **not triggered by human prompts**. They are triggered by events — incidents, bug reports, customer feedback, monitoring signals. This is the beginning of a company world model.
+
+| Agent | Role | What It Watches |
+|-------|------|-----------------|
+| 🔭 [GitHub Monitor](world-model/world-model-github-monitor.md) | Event source | Issues, PRs, CI, security alerts, contributor activity |
+| 🌐 [DNS Health Monitor](world-model/world-model-dns-monitor.md) | Event source | Resolution, propagation, DNSSEC, subdomain takeover |
+| 💜 [Community Monitor](world-model/world-model-community-monitor.md) | Event source | Discord, sentiment, support queues, growth trends |
+| 🚨 [Security Monitor](world-model/world-model-security-monitor.md) | Event source | Phishing, abuse, CVEs, threat intelligence |
+| 🧠 [Decision Engine](world-model/world-model-decision-engine.md) | Central brain | Classifies, prioritizes, routes all signals to agents |
+| 🔗 [Coordination Layer](world-model/world-model-coordination-layer.md) | Meta-optimizer | Cross-team blocks, review queues, operating design |
+
+> **The insight**: *"The bottlenecks are shifting away from implementation and toward review, prioritization, coordination, and operating design."* — The world model handles that shift.
+
 ---
 
 ## Quick Start
@@ -235,6 +251,7 @@ agency/
 ├── project-management/      # 3 agents — Coordination, Operations, Experiments...
 ├── specialized/             # 6 agents — Orchestrator, DNS Migration, API...
 ├── control-plane/           # 5 agents + policy.yml — Governance layer
+├── world-model/             # 6 agents — Monitors, Decision Engine, Coordination
 ├── teams/                   # TEAM.md manifests per division
 │   ├── engineering/TEAM.md
 │   ├── design/TEAM.md
@@ -268,7 +285,7 @@ agency/
 └── README.md                # This file
 ```
 
-**Total: 63 agents across 13 divisions, 7 skills, 2 projects, 3 tasks**
+**Total: 69 agents across 14 divisions, 7 skills, 2 projects, 3 tasks**
 
 ---
 

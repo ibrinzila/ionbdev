@@ -82,6 +82,16 @@ All agent actions are governed by the [Control Plane](control-plane/README.md):
 - [Project Management](teams/project-management/TEAM.md) — 3 agents
 - [Specialized](teams/specialized/TEAM.md) — 6 agents
 - [Control Plane](teams/control-plane/TEAM.md) — 5 agents
+- [World Model](teams/world-model/TEAM.md) — 6 agents (autonomous, event-driven)
+
+## World Model
+
+The autonomous intelligence layer — not triggered by prompts, but by events:
+- **Event monitors** watch GitHub, DNS, community, and security feeds continuously
+- **Decision engine** classifies, prioritizes, and routes to the right agents
+- **Coordination layer** manages the new bottleneck: review, prioritization, and operating design
+
+See [World Model documentation](world-model/README.md) for the full architecture.
 
 ## Skills
 
