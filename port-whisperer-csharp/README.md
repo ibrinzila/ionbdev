@@ -12,7 +12,7 @@ A cross-platform C# port of [port-whisperer](https://github.com/LarsenCundric/po
 
 ## Requirements
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
 
 ## Build & Run
 
