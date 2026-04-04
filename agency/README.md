@@ -183,6 +183,19 @@ You don't need a bigger model. You need **better structure**.
 
 > **The insight**: *"The bottlenecks are shifting away from implementation and toward review, prioritization, coordination, and operating design."* — The world model handles that shift.
 
+### Auto-Optimize (1 agent + benchmarks)
+*Humans write specs. Machines optimize execution. Benchmarks keep everyone honest. [Full documentation](auto-optimize/README.md)*
+
+> Inspired by [AutoAgent](https://github.com/kevinrgu/autoagent) — instead of hand-tuning agents, a meta-agent automatically evolves them through benchmark-driven iteration. Score goes up? Keep it. Score goes down? Discard it.
+
+| Component | Purpose |
+|-----------|---------|
+| 🧬 [Meta-Agent Optimizer](auto-optimize/world-model-meta-agent-optimizer.md) | Reads specs, runs benchmarks, proposes changes, keeps improvements |
+| `programs/*.md` | Human-written specs defining what "great" looks like per agent |
+| `benchmarks/*/suite.yml` | Objective test cases with inputs, expected outputs, and scoring |
+
+**Benchmark suites**: DNS Validation (20 cases), PR Review (12 cases), Abuse Detection (10 cases)
+
 ---
 
 ## Quick Start
@@ -252,6 +265,10 @@ agency/
 ├── specialized/             # 6 agents — Orchestrator, DNS Migration, API...
 ├── control-plane/           # 5 agents + policy.yml — Governance layer
 ├── world-model/             # 6 agents — Monitors, Decision Engine, Coordination
+├── auto-optimize/           # 1 agent + programs + benchmarks — Self-improvement
+│   ├── programs/            # Human-written optimization specs
+│   ├── benchmarks/          # Objective evaluation suites (42 test cases)
+│   └── results/             # Score history and optimization logs
 ├── teams/                   # TEAM.md manifests per division
 │   ├── engineering/TEAM.md
 │   ├── design/TEAM.md
@@ -285,7 +302,7 @@ agency/
 └── README.md                # This file
 ```
 
-**Total: 69 agents across 14 divisions, 7 skills, 2 projects, 3 tasks**
+**Total: 70 agents across 14 divisions + auto-optimize, 7 skills, 2 projects, 3 tasks, 42 benchmark cases**
 
 ---
 
@@ -334,13 +351,40 @@ The Agent Companies protocol adds three things our agent files alone can't provi
 
 ---
 
+## The Full Stack
+
+```
+┌─────────────────────────────────────────────────┐
+│  Layer 5: AUTO-OPTIMIZE                         │  Self-improvement
+│  Programs → Benchmarks → Meta-Agent →           │
+│  Score up? Keep. Score down? Discard. Repeat.   │
+├─────────────────────────────────────────────────┤
+│  Layer 4: WORLD MODEL                           │  Autonomous intelligence
+│  Monitors → Signals → Decision Engine →         │
+│  Coordination Layer                              │
+├─────────────────────────────────────────────────┤
+│  Layer 3: AGENT COMPANIES PROTOCOL              │  Portable structure
+│  COMPANY.md → TEAM.md → SKILL.md →             │
+│  PROJECT.md → TASK.md                           │
+├─────────────────────────────────────────────────┤
+│  Layer 2: CONTROL PLANE                         │  Governance
+│  Policy → Risk → Approvals → Rollback →        │
+│  Audit → Circuit Breakers                       │
+├─────────────────────────────────────────────────┤
+│  Layer 1: AGENT DIVISIONS                       │  Specialized expertise
+│  70 agents across 14 divisions                  │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
 ## Why This Exists
 
 The is-a.dev project manages 6,000+ domain registrations through GitHub PRs. That's a lot of DNS records, community interactions, and infrastructure to manage.
 
 These agents give AI tools the **context and structure** they need to help effectively — whether that's reviewing a domain PR, debugging DNS propagation, or planning the next feature.
 
-**Specialized. Accountable. Composable. Governed.**
+**Specialized. Accountable. Composable. Governed. Self-improving.**
 
 ---
 
@@ -350,5 +394,5 @@ MIT License — same as the is-a.dev project.
 
 ---
 
-*Inspired by [The Agency](https://github.com/msitarzewski/agency-agents) — 50K+ stars on GitHub.*
+*Inspired by [The Agency](https://github.com/msitarzewski/agency-agents), [Harvey AI's Spectre](https://www.harvey.ai/blog/autonomous-agents-legal-is-next), and [AutoAgent](https://github.com/kevinrgu/autoagent).*
 *Compatible with the [Agent Companies](https://agentcompanies.io) protocol.*

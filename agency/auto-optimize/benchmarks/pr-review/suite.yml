@@ -1,0 +1,139 @@
+# PR Review Benchmark Suite
+# Tests the PR Reviewer agent's ability to make correct review decisions
+
+suite:
+  name: pr-review
+  version: "1.0.0"
+  description: "Evaluate PR review accuracy, abuse detection, and community experience"
+  total_cases: 12
+
+cases:
+  # ─── Approve Cases ───────────────────────────────────────────
+  - id: first-time-valid
+    name: "First-time contributor with valid CNAME"
+    input:
+      author: "newdev123"
+      contributions: 0
+      files: [{ path: "domains/newdev.json", content: { owner: { username: "newdev123" }, record: { CNAME: "newdev123.github.io" } } }]
+    expected:
+      decision: approve
+      welcome_message: true
+      validation_passed: true
+    scoring: { correct_decision: 0.3, welcome: 0.3, validation: 0.2, tone: 0.2 }
+
+  - id: experienced-valid
+    name: "Experienced contributor updating their domain"
+    input:
+      author: "regulardev"
+      contributions: 25
+      files: [{ path: "domains/regulardev.json", content: { owner: { username: "regulardev" }, record: { A: ["203.0.113.5"] } } }]
+    expected:
+      decision: approve
+      validation_passed: true
+    scoring: { correct_decision: 0.5, validation: 0.3, efficiency: 0.2 }
+
+  - id: complex-valid
+    name: "Valid domain with multiple record types"
+    input:
+      author: "poweruser"
+      contributions: 50
+      files: [{ path: "domains/poweruser.json", content: { owner: { username: "poweruser" }, record: { A: ["203.0.113.1"], TXT: ["v=spf1 ~all"], MX: ["mail.example.com"] } } }]
+    expected:
+      decision: approve
+    scoring: { correct_decision: 0.5, understands_multi_record: 0.3, validation: 0.2 }
+
+  # ─── Reject Cases ────────────────────────────────────────────
+  - id: invalid-json
+    name: "Malformed JSON in domain file"
+    input:
+      author: "newuser"
+      contributions: 0
+      files: [{ path: "domains/badformat.json", content_raw: "{ invalid json }" }]
+    expected:
+      decision: changes_requested
+      identifies_json_error: true
+      provides_fix: true
+    scoring: { correct_decision: 0.3, identifies_error: 0.3, provides_fix: 0.2, tone: 0.2 }
+
+  - id: missing-owner
+    name: "Missing owner.username field"
+    input:
+      author: "newuser"
+      contributions: 0
+      files: [{ path: "domains/noowner.json", content: { record: { CNAME: "example.com" } } }]
+    expected:
+      decision: changes_requested
+      identifies_missing_field: true
+    scoring: { correct_decision: 0.4, identifies_field: 0.3, provides_fix: 0.3 }
+
+  - id: private-ip
+    name: "Domain with private IP address"
+    input:
+      author: "confused_dev"
+      contributions: 0
+      files: [{ path: "domains/myserver.json", content: { owner: { username: "confused_dev" }, record: { A: ["10.0.0.1"] } } }]
+    expected:
+      decision: changes_requested
+      identifies_private_ip: true
+      helpful_explanation: true
+    scoring: { correct_decision: 0.3, identifies_issue: 0.3, explains_why: 0.2, suggests_fix: 0.2 }
+
+  # ─── Abuse Cases ─────────────────────────────────────────────
+  - id: obvious-phishing
+    name: "Obvious PayPal phishing domain"
+    input:
+      author: "throwaway999"
+      contributions: 0
+      account_age_days: 2
+      files: [{ path: "domains/paypa1-login.json", content: { owner: { username: "throwaway999" }, record: { CNAME: "phish.workers.dev" } } }]
+    expected:
+      decision: reject
+      reason: phishing
+      flags: [brand_impersonation, new_account, suspicious_host]
+    scoring: { correct_decision: 0.3, identifies_phishing: 0.3, evidence_quality: 0.2, appropriate_action: 0.2 }
+
+  - id: subtle-typosquat
+    name: "Subtle Google typosquat"
+    input:
+      author: "user2026new"
+      contributions: 0
+      files: [{ path: "domains/go0gle-auth.json", content: { owner: { username: "user2026new" }, record: { CNAME: "sus-host.pages.dev" } } }]
+    expected:
+      decision: reject
+      reason: typosquatting
+    scoring: { correct_decision: 0.4, identifies_typosquat: 0.3, evidence: 0.3 }
+
+  - id: legitimate-brand-adjacent
+    name: "Legitimate Google employee portfolio"
+    input:
+      author: "ex-googler"
+      contributions: 15
+      account_age_days: 730
+      files: [{ path: "domains/googler-portfolio.json", content: { owner: { username: "ex-googler" }, record: { CNAME: "ex-googler.github.io" } } }]
+    expected:
+      decision: approve
+      note: "Not abuse — legitimate personal portfolio from established contributor"
+    scoring: { correct_decision: 0.5, avoids_false_positive: 0.3, reasoning: 0.2 }
+
+  # ─── Edge Cases ──────────────────────────────────────────────
+  - id: reserved-domain
+    name: "Attempt to register reserved domain"
+    input:
+      author: "smartuser"
+      contributions: 5
+      files: [{ path: "domains/www.json", content: { owner: { username: "smartuser" }, record: { A: ["203.0.113.1"] } } }]
+    expected:
+      decision: reject
+      reason: reserved_domain
+    scoring: { correct_decision: 0.5, identifies_reserved: 0.3, explains_policy: 0.2 }
+
+  - id: owner-mismatch
+    name: "Owner username doesn't match PR author"
+    input:
+      author: "realuser"
+      contributions: 3
+      files: [{ path: "domains/someone-else.json", content: { owner: { username: "differentuser" }, record: { CNAME: "differentuser.github.io" } } }]
+    expected:
+      decision: changes_requested
+      identifies_mismatch: true
+    scoring: { correct_decision: 0.4, identifies_mismatch: 0.3, asks_for_explanation: 0.3 }

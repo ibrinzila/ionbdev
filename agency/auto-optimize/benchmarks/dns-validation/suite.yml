@@ -1,0 +1,193 @@
+# DNS Validation Benchmark Suite
+# Each test case has input, expected output, and scoring weights
+
+suite:
+  name: dns-validation
+  version: "1.0.0"
+  description: "Evaluate DNS record validation accuracy and error quality"
+  total_cases: 20
+
+cases:
+  # ─── Valid Records (should pass) ──────────────────────────────
+  - id: valid-a-record
+    name: "Valid A record with public IPv4"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { A: ["203.0.113.1"] } }
+    expected:
+      result: pass
+    scoring: { correct_result: 0.7, correct_reasoning: 0.3 }
+
+  - id: valid-cname
+    name: "Valid CNAME record"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { CNAME: "testuser.github.io" } }
+    expected:
+      result: pass
+    scoring: { correct_result: 0.7, correct_reasoning: 0.3 }
+
+  - id: valid-aaaa
+    name: "Valid AAAA record"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { AAAA: ["2001:db8::1"] } }
+    expected:
+      result: pass
+    scoring: { correct_result: 0.7, correct_reasoning: 0.3 }
+
+  - id: valid-mx
+    name: "Valid MX records"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { MX: ["mail.example.com", "mail2.example.com"] } }
+    expected:
+      result: pass
+    scoring: { correct_result: 0.7, correct_reasoning: 0.3 }
+
+  - id: valid-txt
+    name: "Valid TXT record array"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { TXT: ["v=spf1 include:_spf.google.com ~all"] } }
+    expected:
+      result: pass
+    scoring: { correct_result: 0.7, correct_reasoning: 0.3 }
+
+  - id: valid-url-proxied
+    name: "Valid URL redirect with proxy"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { URL: "https://example.com" }, proxied: true }
+    expected:
+      result: pass
+    scoring: { correct_result: 0.7, correct_reasoning: 0.3 }
+
+  - id: valid-srv
+    name: "Valid SRV record"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { SRV: [{ priority: 10, weight: 60, port: 5060, target: "sip.example.com" }] } }
+    expected:
+      result: pass
+    scoring: { correct_result: 0.7, correct_reasoning: 0.3 }
+
+  # ─── Invalid Records (should fail) ──────────────────────────
+  - id: private-ipv4
+    name: "Reject private IPv4 address"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { A: ["192.168.1.1"] } }
+    expected:
+      result: fail
+      error_contains: "private"
+    scoring: { correct_result: 0.4, identifies_issue: 0.3, suggests_fix: 0.3 }
+
+  - id: cname-conflict
+    name: "Reject CNAME with A record"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { CNAME: "example.com", A: ["1.2.3.4"] } }
+    expected:
+      result: fail
+      error_contains: "CNAME"
+    scoring: { correct_result: 0.4, identifies_conflict: 0.3, explains_rfc: 0.3 }
+
+  - id: missing-owner-username
+    name: "Reject missing owner username"
+    input:
+      filename: "mysite.json"
+      content: { owner: {}, record: { A: ["203.0.113.1"] } }
+    expected:
+      result: fail
+      error_contains: "username"
+    scoring: { correct_result: 0.5, correct_field: 0.3, actionable_fix: 0.2 }
+
+  - id: empty-record
+    name: "Reject empty record object"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: {} }
+    expected:
+      result: fail
+      error_contains: "record"
+    scoring: { correct_result: 0.5, correct_reasoning: 0.3, helpful_message: 0.2 }
+
+  - id: reserved-domain
+    name: "Reject reserved domain name"
+    input:
+      filename: "www.json"
+      content: { owner: { username: "testuser" }, record: { A: ["203.0.113.1"] } }
+    expected:
+      result: fail
+      error_contains: "reserved"
+    scoring: { correct_result: 0.5, identifies_reserved: 0.3, suggests_alternative: 0.2 }
+
+  - id: loopback-ipv4
+    name: "Reject loopback address"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { A: ["127.0.0.1"] } }
+    expected:
+      result: fail
+      error_contains: "loopback"
+    scoring: { correct_result: 0.5, identifies_loopback: 0.3, suggests_fix: 0.2 }
+
+  - id: link-local-ipv6
+    name: "Reject link-local IPv6"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { AAAA: ["fe80::1"] } }
+    expected:
+      result: fail
+      error_contains: "link-local"
+    scoring: { correct_result: 0.5, identifies_range: 0.3, explains_why: 0.2 }
+
+  # ─── Edge Cases ──────────────────────────────────────────────
+  - id: proxied-special-ip
+    name: "Allow 192.0.2.1 for proxied records"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { A: ["192.0.2.1"] }, proxied: true }
+    expected:
+      result: pass
+      note: "192.0.2.1 is allowed when proxied=true (URL redirect)"
+    scoring: { correct_result: 0.6, understands_exception: 0.4 }
+
+  - id: multiple-a-records
+    name: "Valid multiple A records (load balancing)"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { A: ["203.0.113.1", "203.0.113.2"] } }
+    expected:
+      result: pass
+    scoring: { correct_result: 0.7, correct_reasoning: 0.3 }
+
+  - id: uppercase-filename
+    name: "Reject uppercase in filename"
+    input:
+      filename: "MySite.json"
+      content: { owner: { username: "testuser" }, record: { A: ["203.0.113.1"] } }
+    expected:
+      result: fail
+      error_contains: "lowercase"
+    scoring: { correct_result: 0.5, identifies_naming_rule: 0.3, suggests_fix: 0.2 }
+
+  - id: filename-with-is-a-dev
+    name: "Reject filename containing .is-a.dev"
+    input:
+      filename: "mysite.is-a.dev.json"
+      content: { owner: { username: "testuser" }, record: { A: ["203.0.113.1"] } }
+    expected:
+      result: fail
+      error_contains: "is-a.dev"
+    scoring: { correct_result: 0.5, identifies_rule: 0.3, suggests_fix: 0.2 }
+
+  - id: valid-caa-record
+    name: "Valid CAA record"
+    input:
+      filename: "mysite.json"
+      content: { owner: { username: "testuser" }, record: { CAA: [{ tag: "issue", value: "letsencrypt.org" }] } }
+    expected:
+      result: pass
+    scoring: { correct_result: 0.7, correct_reasoning: 0.3 }
