@@ -8,6 +8,9 @@
    <img alt="Open Issues" src="https://img.shields.io/github/issues-pr-raw/is-a-dev/register?color=5c46eb&label=pull%20requests&style=for-the-badge">
    <br>
    <img alt="Publish" src="https://github.com/is-a-dev/register/actions/workflows/publish.yml/badge.svg">
+   <br><br>
+   <a href="https://twitter.com/intent/tweet?text=I%20just%20got%20my%20free%20.is-a.dev%20subdomain!%20Get%20yours%20at%20https%3A%2F%2Fis-a.dev%20%F0%9F%9A%80&hashtags=isaDev,developer,OpenSource"><img alt="Share on X" src="https://img.shields.io/badge/Share%20on%20X-%23000000?style=for-the-badge&logo=x&logoColor=white"></a>
+   <a href="https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fis-a-dev%2Fregister&title=Get%20a%20free%20.is-a.dev%20subdomain%20for%20your%20developer%20website"><img alt="Share on Reddit" src="https://img.shields.io/badge/Share%20on%20Reddit-%23FF4500?style=for-the-badge&logo=reddit&logoColor=white"></a>
 </p>
 
 <h1 align="center">is-a.dev</h1>
@@ -31,6 +34,13 @@ Not all of these will be posted on GitHub, however they will always be posted in
 - Your pull request will be reviewed and merged. *Make sure to keep an eye on it incase we need you to make any changes!*
 - After the pull request is merged, please allow up to 24 hours for the changes to propagate
 - Enjoy your new `.is-a.dev` domain! Please consider leaving us a star ⭐️ to help support us!
+
+> [!TIP]
+> Spread the word! Share your new domain with the community:
+>
+> [![Share on X](https://img.shields.io/badge/Share%20on%20X-%23000000?style=flat-square&logo=x&logoColor=white)](https://twitter.com/intent/tweet?text=I%20just%20got%20my%20free%20.is-a.dev%20subdomain!%20Get%20yours%20at%20https%3A%2F%2Fis-a.dev%20%F0%9F%9A%80&hashtags=isaDev,developer,OpenSource)
+> [![Share on Reddit](https://img.shields.io/badge/Share%20on%20Reddit-%23FF4500?style=flat-square&logo=reddit&logoColor=white)](https://www.reddit.com/submit?url=https%3A%2F%2Fgithub.com%2Fis-a-dev%2Fregister&title=Get%20a%20free%20.is-a.dev%20subdomain%20for%20your%20developer%20website)
+> [![Share on LinkedIn](https://img.shields.io/badge/Share%20on%20LinkedIn-%230A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fis-a-dev%2Fregister)
 
 ### NS Records
 When applying for NS records, please be aware we already support a [wide range of DNS records](https://docs.is-a.dev/faq/#which-records-are-supported), so you may not need them. 
